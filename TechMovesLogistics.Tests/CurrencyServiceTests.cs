@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Configuration;
+using Moq;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TechMoves_Logistics.Services;
@@ -42,5 +44,40 @@ namespace TechMovesLogistics.Tests
             //Verify that calling the conversion method with a negative amount throws an ArgumentException
             Assert.Throws<ArgumentException>(() => _service.ConvertUsdToZar(usd, rate));
         }
+        [Fact]
+        public async Task GetUsdToZarRate_WhenApiIsDown_ShouldReturnFallbackRate()
+        {
+            // Arrange:
+            // Simulate a failing external API using a custom HttpMessageHandler.
+            var handler = new HttpMessageHandler_AlwaysFail();
+            var httpClient = new HttpClient(handler);
+
+            // Mock configuration values used by the service.
+            var mockConfig = new Mock<IConfiguration>();
+            mockConfig.Setup(c => c[It.Is<string>(s => s == "CurrencyApi:BaseUrl")])
+                      .Returns("https://invalid-url-that-will-fail.com");
+
+            // Inject mocked dependencies into service.
+            var service = new CurrencyService(httpClient, mockConfig.Object);
+
+            // Act:
+            // Attempt to retrieve exchange rate while API is unavailable.
+            var rate = await service.GetUsdToZarRateAsync();
+
+            // Assert:
+            // Ensure system gracefully falls back to a default safe rate.
+            Assert.Equal(18.50m, rate);
+        }
+    }
+
+    // Helper: simulates a network failure
+    public class HttpMessageHandler_AlwaysFail : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            throw new HttpRequestException("Simulated network failure.");
+        }
     }
 }
+
