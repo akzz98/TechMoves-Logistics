@@ -1,94 +1,128 @@
 ﻿@model IEnumerable<TechMoves_Logistics.Models.Contract>
 
 @{
-    ViewData["Title"] = "Contracts Management";
+    ViewData["Title"] = "Contracts";
 }
 
-<h1>Contracts Management</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0"><i class="fa-solid fa-file-contract me-2 text-primary"></i> Contract Management</h2>
+        <p class="text-muted mb-0">Search, filter and manage all logistics agreements</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">
+        <i class="fa-solid fa-file-circle-plus me-2"></i> New Contract
+    </a>
+</div>
 
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-
-<div class="card mb-3">
-    <div class="card-body bg-light">
-        <form asp-action="Index" method="get" class="row">
-            <div class="col-md-3">
-                <input type="date" name="startDate" class="form-control" placeholder="Start Date" />
-            </div>
-            <div class="col-md-3">
-                <input type="date" name="endDate" class="form-control" placeholder="End Date" />
-            </div>
-            <div class="col-md-3">
-                <select name="status" class="form-control" asp-items="Html.GetEnumSelectList<TechMoves_Logistics.Models.Enums.ContractStatus>()">
-                    <option value="">-- All Statuses --</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-outline-primary">Filter Results</button>
+<!-- Search & Filter Card -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body">
+        <h6 class="fw-bold text-muted mb-3"><i class="fa-solid fa-filter me-2"></i> Filter Contracts</h6>
+        <form asp-action="Index" method="get">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Start Date</label>
+                    <input type="date" name="startDate" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">End Date</label>
+                    <input type="date" name="endDate" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Status</label>
+                    <select name="status" class="form-select" asp-items="Html.GetEnumSelectList<TechMoves_Logistics.Models.Enums.ContractStatus>()">
+                        <option value="">-- All Statuses --</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa-solid fa-magnifying-glass me-1"></i> Search
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                        <i class="fa-solid fa-rotate-left me-1"></i> Reset
+                    </a>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                @Html.DisplayNameFor(model => model.Client)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.StartDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.EndDate)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.Status)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.ServiceLevel)
-            </th>
-            <th>
-                @Html.DisplayNameFor(model => model.SignedAgreementPath)
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.Client.ContactDetails)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.StartDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.EndDate)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.Status)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.ServiceLevel)
-            </td>
-            <td>
-                    @if (!string.IsNullOrEmpty(item.SignedAgreementPath))
-                    {
-                        <a asp-action="DownloadAgreement" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Download PDF</a>
-                    }
-                    else
-                    {
-                        <span class="text-muted italic">Incomplete</span>
-                    }
-            </td>
-            <td>
-                <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
-                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
-                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
-            </td>
-        </tr>
+@if (!Model.Any())
+{
+    <div class="card text-center p-5">
+        <i class="fa-solid fa-file-circle-xmark fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">No contracts found</h5>
+        <a asp-action="Create" class="btn btn-primary mt-3">Create First Contract</a>
+    </div>
 }
-    </tbody>
-</table>
+else
+{
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background-color: #1e293b; color: white;">
+                        <tr>
+                            <th class="py-3 px-4"><i class="fa-solid fa-user me-2"></i> Client</th>
+                            <th class="py-3"><i class="fa-solid fa-calendar-day me-2"></i> Start Date</th>
+                            <th class="py-3"><i class="fa-solid fa-calendar-check me-2"></i> End Date</th>
+                            <th class="py-3"><i class="fa-solid fa-circle-half-stroke me-2"></i> Status</th>
+                            <th class="py-3"><i class="fa-solid fa-layer-group me-2"></i> Service Level</th>
+                            <th class="py-3"><i class="fa-solid fa-file-pdf me-2"></i> Agreement</th>
+                            <th class="py-3 text-end px-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="px-4 fw-semibold">@Html.DisplayFor(m => item.Client.Name)</td>
+                                <td>@item.StartDate.ToString("dd MMM yyyy")</td>
+                                <td>@item.EndDate.ToString("dd MMM yyyy")</td>
+                                <td>
+                                    @{
+                                        var badgeClass = item.Status.ToString() switch
+                                        {
+                                            "Active" => "bg-success",
+                                            "Expired" => "bg-danger",
+                                            "Draft" => "bg-secondary",
+                                            "OnHold" => "bg-warning text-dark",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @badgeClass px-3 py-2">@item.Status</span>
+                                </td>
+                                <td>@Html.DisplayFor(m => item.ServiceLevel)</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.SignedAgreementPath))
+                                    {
+                                        <a asp-action="DownloadAgreement" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger">
+                                            <i class="fa-solid fa-file-arrow-down me-1"></i> PDF
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border">
+                                            <i class="fa-solid fa-triangle-exclamation me-1"></i> Missing
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end px-4">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1" title="Details">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary me-1" title="Edit">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Delete">
+                                        <i class="fa-solid fa-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
