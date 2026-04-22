@@ -296,13 +296,35 @@ The project includes a comprehensive test suite in `TechMovesLogistics.Tests/`:
 - `FileServiceTests.cs` - Tests for file upload/management
 - `ServiceRequestServiceTests.cs` - Tests for service request operations
 
-### Running Tests
+### Running Tests Locally
 ```bash
 cd TechMovesLogistics.Tests
 dotnet test
 ```
 
 Or run tests through Visual Studio Test Explorer (Test > Test Explorer or Ctrl+E, Ctrl+T)
+
+### Automated Testing in GitHub Actions
+
+Unit tests are automatically executed on every push and pull request through GitHub Actions. The workflow:
+
+- **Trigger**: Runs on push to `main` and `develop` branches, and on all pull requests
+- **Environment**: Ubuntu latest with .NET 10 SDK
+- **Steps**:
+  1. Checks out the code
+  2. Sets up .NET 10 environment
+  3. Restores NuGet dependencies
+  4. Builds the project in Release configuration
+  5. Runs all unit tests with detailed logging
+  6. Publishes test results as artifacts for 30 days
+
+**Workflow File**: `.github/workflows/unit-tests.yml`
+
+To view test results:
+1. Navigate to the **Actions** tab in the GitHub repository
+2. Select the workflow run you want to inspect
+3. Check the **Unit Tests** job for build logs and test output
+4. Download the **test-results** artifact to view detailed test reports locally
 
 ## Configuration
 
