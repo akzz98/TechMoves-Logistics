@@ -1,75 +1,85 @@
 ﻿@model TechMoves_Logistics.Models.ServiceRequest
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Raise Service Request";
 }
 
-<h1>Create</h1>
-
-<h4>ServiceRequest</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    
-            <div class="form-group mb-3">
-                <label asp-for="ContractId" class="control-label">Contract Reference</label>
-                <select asp-for="ContractId" class="form-control" asp-items="ViewBag.ContractId"></select>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow border-0">
+            <div class="card-header bg-primary text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-truck-fast me-2"></i> New Service Payload</h5>
             </div>
-
-            <div class="form-group mb-3">
-                <label asp-for="Description" class="control-label"></label>
-                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
-
-            <div class="card border-primary mb-3">
-                <div class="card-body">
-                    <h6 class="card-subtitle mb-3 text-muted">Currency Conversion (API Integration)</h6>
-            
-                    <div class="form-group mb-3">
-                        <label asp-for="CostUSD" class="control-label">Amount in USD ($)</label>
-                        <input asp-for="CostUSD" id="usdInput" class="form-control" placeholder="0.00" />
-                        <span asp-validation-for="CostUSD" class="text-danger"></span>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="control-label">Equivalent in ZAR (Calculated)</label>
-                        <div class="input-group">
-                            <span class="input-group-text">R</span>
-                            <input id="zarDisplay" class="form-control bg-light" readonly />
+            <div class="card-body p-4">
+                <form asp-action="Create">
+                    @if (ViewBag.ErrorMessage != null)
+                    {
+                        <div class="alert alert-warning border-0 shadow-sm mb-4">
+                            <i class="fa-solid fa-triangle-exclamation me-2"></i> @ViewBag.ErrorMessage
                         </div>
-                        <small class="text-info">Current Exchange Rate: 1 USD = @ViewBag.ExchangeRate ZAR</small>
+                    }
+
+                    <div class="mb-3">
+                        <label asp-for="ContractId" class="form-label fw-semibold small">Link to Contract</label>
+                        <select asp-for="ContractId" class="form-select" asp-items="ViewBag.ContractId"></select>
                     </div>
-                </div>
-            </div>
 
-            <div class="form-group">
-                <input type="submit" value="Submit Request" class="btn btn-primary w-100" />
-            </div>
-        </form>
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-semibold small">Task Description</label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Describe the cargo or service needed..."></textarea>
+                    </div>
 
-        @section Scripts {
-            <script>
-                        const rate = @ViewBag.ExchangeRate;
-                        document.getElementById('usdInput').addEventListener('input', function() {
-                            const usd = parseFloat(this.value);
-                            if (!isNaN(usd)) {
-                                document.getElementById('zarDisplay').value = (usd * rate).toFixed(2);
-                            } else {
-                                document.getElementById('zarDisplay').value = "0.00";
-                            }
-                        });
-            </script>
-            @{
-                await Html.RenderPartialAsync("_ValidationScriptsPartial");
-            }
-        }
+                    <!-- Currency Widget -->
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-3">Currency Calculation</label>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$ USD</span>
+                                        <input asp-for="CostUSD" id="usd-input" class="form-control form-control-lg fw-bold" placeholder="0.00" />
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="input-group">
+                                        <span class="input-group-text">R ZAR</span>
+                                        <input asp-for="CostZAR" id="zar-output" class="form-control form-control-lg fw-bold bg-white" readonly />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-2 text-center">
+                                <small class="text-muted italic"><i class="fa-solid fa-info-circle me-1"></i> Conversion happens live using real-time API rates</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary py-3 fw-bold">
+                            Submit Logistics Request <i class="fa-solid fa-paper-plane ms-2"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $("#usd-input").on("input", function () {
+                var usd = $(this).val();
+                if (usd && !isNaN(usd)) {
+                    $.get("/ServiceRequests/GetZarAmount?usd=" + usd, function (data) {
+                        $("#zar-output").val(data.toFixed(2));
+                    });
+                } else {
+                    $("#zar-output").val("");
+                }
+            });
+        });
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
