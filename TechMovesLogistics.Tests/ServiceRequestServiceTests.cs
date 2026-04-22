@@ -41,7 +41,7 @@ namespace TechMovesLogistics.Tests
             var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
                 _service.CreateServiceRequestAsync(request));
 
-            Assert.Equal("Cannot create a service request for an Expired or OnHold contract.", exception.Message);
+            Assert.Equal("Cannot create a Service Request for an Expired contract.", exception.Message);
         }
     }
 }
