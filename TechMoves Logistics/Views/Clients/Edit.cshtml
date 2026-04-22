@@ -7,19 +7,21 @@
 <div class="row justify-content-center">
     <div class="col-md-6">
 
-        <div class="d-flex align-items-center mb-4">
-            <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
-                <i class="fa-solid fa-arrow-left"></i>
-            </a>
+        <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold mb-0"><i class="fa-solid fa-user-pen me-2 text-primary"></i> Edit Client</h2>
-                <p class="text-muted mb-0 small">Update client profile information</p>
+                <p class="text-muted mb-0">Update client profile information</p>
             </div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Clients
+            </a>
         </div>
 
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-primary text-white py-3">
-                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-building me-2"></i> Client Profile — ID #@Model.Id</h6>
+            <div class="card-header py-3" style="background-color: #1e293b;">
+                <h5 class="mb-0 text-white fw-bold">
+                    <i class="fa-solid fa-id-card me-2"></i> @Model.Name
+                </h5>
             </div>
             <div class="card-body p-4">
                 <form asp-action="Edit">
@@ -48,14 +50,14 @@
                         <label asp-for="Region" class="form-label fw-semibold small">Operating Region</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light text-muted"><i class="fa-solid fa-map-location-dot"></i></span>
-                            <input asp-for="Region" class="form-control" placeholder="e.g. Gauteng, Global" />
+                            <input asp-for="Region" class="form-control" placeholder="e.g. Gauteng, Global..." />
                         </div>
                         <span asp-validation-for="Region" class="text-danger small"></span>
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center">
-                        <a asp-action="Index" class="text-decoration-none text-muted small">
-                            <i class="fa-solid fa-xmark me-1"></i> Cancel
+                        <a asp-action="Details" asp-route-id="@Model.Id" class="text-decoration-none text-muted">
+                            <i class="fa-solid fa-circle-info me-1"></i> View Details
                         </a>
                         <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
                             <i class="fa-solid fa-floppy-disk me-2"></i> Save Changes
