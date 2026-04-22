@@ -1,0 +1,54 @@
+# Build results
+bin/
+obj/
+*.dll
+*.exe
+*.pdb
+
+# Visual Studio
+.vs/
+.vscode/
+*.user
+*.sln.docstates
+
+# Local environment files
+appsettings.*.json
+.env
+.env.local
+
+# NuGet
+.nuget/
+*.nupkg
+*.nuget.props
+*.nuget.targets
+
+# IDE and editor
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Third-party frontend libraries (managed by npm/bower/nuget)
+wwwroot/lib/
+
+# Application specific
+wwwroot\uploads
+
+# User-specific files
+*.csproj.user
+*.sln.user
+
+# Rider
+.idea/
+.idea_modules/
+*.iml
+out/
+
+# Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
