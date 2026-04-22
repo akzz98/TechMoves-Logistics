@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="TechMoves Logistics/TechMovesLogistics.csproj" />
+  <Project Path="TechMovesLogistics.Tests/TechMovesLogistics.Tests.csproj" Id="a02ef477-3779-4b44-9781-8b6d394933fc" />
 </Solution>
