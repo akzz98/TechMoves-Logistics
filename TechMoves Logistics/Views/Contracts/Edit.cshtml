@@ -1,59 +1,111 @@
 ﻿@model TechMoves_Logistics.Models.Contract
 
 @{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Edit Contract";
 }
 
-<h1>Edit</h1>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
 
-<h4>Contract</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="ClientId" class="control-label"></label>
-                <select asp-for="ClientId" class="form-control" asp-items="ViewBag.ClientId"></select>
-                <span asp-validation-for="ClientId" class="text-danger"></span>
+        <div class="d-flex align-items-center mb-4">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm me-3">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div>
+                <h2 class="fw-bold mb-0"><i class="fa-solid fa-file-pen me-2 text-primary"></i> Edit Contract</h2>
+                <p class="text-muted mb-0 small">Modify agreement terms and status</p>
             </div>
-            <div class="form-group">
-                <label asp-for="StartDate" class="control-label"></label>
-                <input asp-for="StartDate" class="form-control" />
-                <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white py-3">
+                <h6 class="mb-0 fw-bold"><i class="fa-solid fa-file-contract me-2"></i> Agreement — Contract ID #@Model.Id</h6>
             </div>
-            <div class="form-group">
-                <label asp-for="EndDate" class="control-label"></label>
-                <input asp-for="EndDate" class="form-control" />
-                <span asp-validation-for="EndDate" class="text-danger"></span>
+            <div class="card-body p-4">
+                <form asp-action="Edit" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
+                    <input type="hidden" asp-for="Id" />
+
+                    <div class="mb-4">
+                        <label asp-for="ClientId" class="form-label fw-semibold small">Assigned Client</label>
+                        <select asp-for="ClientId" class="form-select" asp-items="ViewBag.ClientId">
+                            <option value="">-- Select Client --</option>
+                        </select>
+                        <span asp-validation-for="ClientId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="StartDate" class="form-label fw-semibold small">Start Date</label>
+                            <input asp-for="StartDate" type="date" class="form-control" />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EndDate" class="form-label fw-semibold small">End Date</label>
+                            <input asp-for="EndDate" type="date" class="form-control" />
+                            <span asp-validation-for="EndDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Status" class="form-label fw-semibold small">Contract Status</label>
+                            <select asp-for="Status" class="form-select"
+                                    asp-items="Html.GetEnumSelectList<TechMoves_Logistics.Models.Enums.ContractStatus>()">
+                            </select>
+                            <span asp-validation-for="Status" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ServiceLevel" class="form-label fw-semibold small">Service Tier</label>
+                            <input asp-for="ServiceLevel" class="form-control" placeholder="e.g. Gold Tier Freight" />
+                            <span asp-validation-for="ServiceLevel" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Current PDF Info -->
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold small text-primary">
+                            <i class="fa-solid fa-file-pdf me-1"></i> Signed Agreement
+                        </label>
+                        @if (!string.IsNullOrEmpty(Model.SignedAgreementPath))
+                        {
+                            <div class="alert alert-success py-2 small d-flex align-items-center justify-content-between">
+                                <span><i class="fa-solid fa-circle-check me-2"></i> Agreement on file</span>
+                                <a asp-action="DownloadAgreement" asp-route-id="@Model.Id"
+                                       class="btn btn-sm btn-outline-success">
+                                    <i class="fa-solid fa-download me-1"></i> View Current
+                                </a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-warning py-2 small">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i> No signed agreement uploaded yet.
+                            </div>
+                        }
+                        <div class="p-3 border border-2 rounded bg-light mt-2">
+                            <input type="file" name="pdfFile" class="form-control" accept=".pdf" />
+                            <div class="form-text small text-muted mt-1">Upload a new PDF to replace the existing agreement.</div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a asp-action="Index" class="text-decoration-none text-muted small">
+                            <i class="fa-solid fa-xmark me-1"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold">
+                            <i class="fa-solid fa-floppy-disk me-2"></i> Save Changes
+                        </button>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control"></select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="ServiceLevel" class="control-label"></label>
-                <input asp-for="ServiceLevel" class="form-control" />
-                <span asp-validation-for="ServiceLevel" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="SignedAgreementPath" class="control-label"></label>
-                <input asp-for="SignedAgreementPath" class="form-control" />
-                <span asp-validation-for="SignedAgreementPath" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
+
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
