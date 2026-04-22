@@ -68,15 +68,110 @@ namespace TechMovesLogistics.Tests
             // Ensure system gracefully falls back to a default safe rate.
             Assert.Equal(18.50m, rate);
         }
-    }
-
-    // Helper: simulates a network failure
-    public class HttpMessageHandler_AlwaysFail : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request, CancellationToken cancellationToken)
+        [Fact]
+        public void ConvertUsdToZar_WithZeroRate_ShouldThrowException()
         {
-            throw new HttpRequestException("Simulated network failure.");
+            // Arrange:
+            // Exchange rates must be positive values; zero is invalid in financial conversion logic.
+            decimal usd = 100m;
+            decimal rate = 0m;
+
+            // Act & Assert:
+            // Ensure the service enforces business rules and rejects invalid exchange rates.
+            Assert.Throws<ArgumentException>(() =>
+                _service.ConvertUsdToZar(usd, rate));
+        }
+        [Fact]
+        public void ConvertUsdToZar_WithNegativeRate_ShouldThrowException()
+        {
+            // Arrange:
+            // Negative exchange rates are logically invalid and should be rejected.
+            decimal usd = 100m;
+            decimal rate = -5m;
+
+            // Act & Assert:
+            // Validate that invalid financial input is not processed silently.
+            Assert.Throws<ArgumentException>(() =>
+                _service.ConvertUsdToZar(usd, rate));
+        }
+        [Fact]
+        public void ConvertUsdToZar_RoundingDecimalsCorrectly_ShouldReturnTwoDecimalPlaces()
+        {
+            // Arrange:
+            // Test ensures financial rounding rules are correctly applied.
+            decimal usd = 1.234m;
+            decimal rate = 18.50m;
+            decimal expected = 22.83m; // expected rounded result (not truncated)
+
+            // Act:
+            var result = _service.ConvertUsdToZar(usd, rate);
+
+            // Assert:
+            // Ensure correct financial rounding to 2 decimal places.
+            Assert.Equal(expected, result);
+        }
+        [Fact]
+        public async Task GetUsdToZarRateAsync_WhenApiReturnsValidResponse_ShouldReturnParsedRate()
+        {
+            // Arrange:
+            // Simulate a successful external API response with valid JSON payload.
+            var fakeJson = """
+        {
+            "result": "success",
+            "conversion_rates": {
+                "ZAR": 18.50
+            }
+        }
+        """;
+
+            var handler = new HttpMessageHandler_Success(fakeJson);
+            var httpClient = new HttpClient(handler);
+
+            // Mock configuration for API base URL (used inside service)
+            var mockConfig = new Mock<IConfiguration>();
+            mockConfig.Setup(c => c["CurrencyApi:BaseUrl"])
+                      .Returns("https://fake-api.com/latest/USD");
+
+            var service = new CurrencyService(httpClient, mockConfig.Object);
+
+            // Act:
+            // Call external API method (mocked) to retrieve exchange rate.
+            var rate = await service.GetUsdToZarRateAsync();
+
+            // Assert:
+            // Validate correct parsing of API response.
+            Assert.Equal(18.50m, rate);
+        }
+
+        // Helper: simulates a network failure
+        public class HttpMessageHandler_AlwaysFail : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                throw new HttpRequestException("Simulated network failure.");
+            }
+        }
+        // Helper: simulates a successful HTTP response
+        public class HttpMessageHandler_Success : HttpMessageHandler
+        {
+            private readonly string _responseJson;
+
+            public HttpMessageHandler_Success(string responseJson)
+            {
+                _responseJson = responseJson;
+            }
+
+            protected override Task<HttpResponseMessage> SendAsync(
+                HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+                {
+                    Content = new StringContent(_responseJson, System.Text.Encoding.UTF8, "application/json")
+                };
+                return Task.FromResult(response);
+            }
+
         }
     }
 }
