@@ -1,0 +1,75 @@
+﻿@model TechMoves_Logistics.Models.ServiceRequest
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>ServiceRequest</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    
+            <div class="form-group mb-3">
+                <label asp-for="ContractId" class="control-label">Contract Reference</label>
+                <select asp-for="ContractId" class="form-control" asp-items="ViewBag.ContractId"></select>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="control-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="card border-primary mb-3">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-3 text-muted">Currency Conversion (API Integration)</h6>
+            
+                    <div class="form-group mb-3">
+                        <label asp-for="CostUSD" class="control-label">Amount in USD ($)</label>
+                        <input asp-for="CostUSD" id="usdInput" class="form-control" placeholder="0.00" />
+                        <span asp-validation-for="CostUSD" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="control-label">Equivalent in ZAR (Calculated)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R</span>
+                            <input id="zarDisplay" class="form-control bg-light" readonly />
+                        </div>
+                        <small class="text-info">Current Exchange Rate: 1 USD = @ViewBag.ExchangeRate ZAR</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Submit Request" class="btn btn-primary w-100" />
+            </div>
+        </form>
+
+        @section Scripts {
+            <script>
+                        const rate = @ViewBag.ExchangeRate;
+                        document.getElementById('usdInput').addEventListener('input', function() {
+                            const usd = parseFloat(this.value);
+                            if (!isNaN(usd)) {
+                                document.getElementById('zarDisplay').value = (usd * rate).toFixed(2);
+                            } else {
+                                document.getElementById('zarDisplay').value = "0.00";
+                            }
+                        });
+            </script>
+            @{
+                await Html.RenderPartialAsync("_ValidationScriptsPartial");
+            }
+        }
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
