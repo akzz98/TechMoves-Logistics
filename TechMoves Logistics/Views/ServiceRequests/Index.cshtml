@@ -48,14 +48,14 @@ else
                                 <td>@Html.DisplayFor(m => item.Description)</td>
                                 <td>
                                     <span class="text-muted small">$</span>
-                                    <span class="fw-semibold">@item.CostUSD.ToString("N2")</span>
+                                    <span class="fw-semibold">@((item.CostUSD ?? 0).ToString("N2"))</span>
                                 </td>
                                 <td>
                                     <span class="text-muted small">R</span>
-                                    <span class="fw-semibold text-success">@item.CostZAR.ToString("N2")</span>
+                                    <span class="fw-semibold text-success">@(item.CostZAR.ToString("N2"))</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-light text-dark border">@item.ExchangeRateUsed.ToString("N2")</span>
+                                    <span class="badge bg-light text-dark border">@((item.ExchangeRateUsed ?? 0).ToString("N2"))</span>
                                 </td>
                                 <td>
                                     @{
@@ -70,7 +70,7 @@ else
                                     }
                                     <span class="badge @srBadge px-3 py-2">@item.Status</span>
                                 </td>
-                                <td class="text-muted small">@item.CreatedAt.ToString("dd MMM yyyy")</td>
+                                <td class="text-muted small">@(item.CreatedAt.ToString("dd MMM yyyy"))</td>
                                 <td class="text-end px-4">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary me-1" title="Details">
                                         <i class="fa-solid fa-circle-info"></i>
