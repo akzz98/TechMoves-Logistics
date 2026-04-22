@@ -1,67 +1,73 @@
 ﻿@model TechMoves_Logistics.Models.Contract
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Create Contract";
 }
 
-<h1>Create</h1>
-
-<h4>Contract</h4>
-<hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create" enctype="multipart/form-data">
-            <!-- Support for PDF upload -->
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-    
-            <div class="form-group mb-3">
-                <label asp-for="ClientId" class="control-label">Select Client</label>
-                <select asp-for="ClientId" class="form-control" asp-items="ViewBag.ClientId"></select>
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="fa-solid fa-file-contract me-2"></i> New Service Level Agreement</h5>
             </div>
+            <div class="card-body p-4">
+                <form asp-action="Create" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small"></div>
 
-            <div class="row">
-                <div class="form-group col-md-6 mb-3">
-                    <label asp-for="StartDate" class="control-label"></label>
-                    <input asp-for="StartDate" type="date" class="form-control" />
-                    <span asp-validation-for="StartDate" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-6 mb-3">
-                    <label asp-for="EndDate" class="control-label"></label>
-                    <input asp-for="EndDate" type="date" class="form-control" />
-                    <span asp-validation-for="EndDate" class="text-danger"></span>
-                </div>
-            </div>
+                    <div class="mb-4">
+                        <label asp-for="ClientId" class="form-label fw-semibold small">Assigned Client</label>
+                        <select asp-for="ClientId" class="form-select form-select-lg border-2" asp-items="ViewBag.ClientId">
+                            <option value="">-- Select Target Client --</option>
+                        </select>
+                        <span asp-validation-for="ClientId" class="text-danger small"></span>
+                    </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Status" class="control-label"></label>
-                <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<TechMoves_Logistics.Models.Enums.ContractStatus>()"></select>
-                <span asp-validation-for="Status" class="text-danger"></span>
-            </div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="StartDate" class="form-label fw-semibold small">Agreement Start</label>
+                            <input asp-for="StartDate" type="date" class="form-control" />
+                            <span asp-validation-for="StartDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="EndDate" class="form-label fw-semibold small">Agreement End</label>
+                            <input asp-for="EndDate" type="date" class="form-control" />
+                            <span asp-validation-for="EndDate" class="text-danger small"></span>
+                        </div>
+                    </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="ServiceLevel" class="control-label"></label>
-                <input asp-for="ServiceLevel" class="form-control" />
-                <span asp-validation-for="ServiceLevel" class="text-danger"></span>
-            </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label asp-for="Status" class="form-label fw-semibold small">Initial Status</label>
+                            <select asp-for="Status" class="form-select" asp-items="Html.GetEnumSelectList<TechMoves_Logistics.Models.Enums.ContractStatus>()"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ServiceLevel" class="form-label fw-semibold small">Service Tier</label>
+                            <input asp-for="ServiceLevel" class="form-control" placeholder="e.g. Gold Tier Freight" />
+                        </div>
+                    </div>
 
-            <!-- REPLACED: Path string with File Input -->
-            <div class="form-group mb-4">
-                <label class="control-label font-weight-bold">Signed Agreement (PDF Only)</label>
-                <input type="file" name="signedAgreement" class="form-control" accept=".pdf" />
-                <small class="text-muted">Max file size: 5MB</small>
-            </div>
+                    <div class="mb-5">
+                        <label class="form-label fw-semibold text-primary"><i class="fa-solid fa-upload me-1"></i> Signed Agreement (PDF Only)</label>
+                        <div class="p-3 border border-2 border-dashed rounded bg-light">
+                            <input type="file" name="pdfFile" class="form-control" accept=".pdf" />
+                            <div class="form-text mt-2 small text-muted">Mandatory proof of signature for contract activation.</div>
+                        </div>
+                    </div>
 
-            <div class="form-group">
-                <input type="submit" value="Save Contract" class="btn btn-success w-100" />
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a asp-action="Index" class="text-decoration-none text-muted"><i class="fa-solid fa-arrow-left me-1"></i> Back to List</a>
+                        <button type="submit" class="btn btn-primary px-5 py-2 fw-bold shadow">
+                            Generate Agreement <i class="fa-solid fa-arrow-right ms-2"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
