@@ -1,57 +1,126 @@
 ﻿@model TechMoves_Logistics.Models.Contract
 
 @{
-    ViewData["Title"] = "Delete";
+    ViewData["Title"] = "Delete Contract";
+    var badgeClass = Model.Status.ToString() switch
+    {
+        "Active" => "bg-success",
+        "Expired" => "bg-danger",
+        "Draft" => "bg-secondary",
+        "OnHold" => "bg-warning text-dark",
+        _ => "bg-secondary"
+    };
 }
 
-<h1>Delete</h1>
+<div class="row justify-content-center">
+    <div class="col-md-7">
 
-<h3>Are you sure you want to delete this?</h3>
-<div>
-    <h4>Contract</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Client)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Client.ContactDetails)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.StartDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.StartDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.EndDate)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.EndDate)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ServiceLevel)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ServiceLevel)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.SignedAgreementPath)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.SignedAgreementPath)
-        </dd>
-    </dl>
-    
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
-    </form>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i> Delete Contract</h2>
+                <p class="text-muted mb-0">This action is permanent and cannot be undone</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Contracts
+            </a>
+        </div>
+
+        <!-- Warning Banner -->
+        <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation fa-2x"></i>
+            <div>
+                <strong>Warning!</strong> Deleting this contract will also remove all linked
+                service requests. This cannot be reversed.
+            </div>
+        </div>
+
+        <!-- Record Summary Card -->
+        <div class="card shadow-sm border-danger border-2 mb-4">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fa-solid fa-file-contract me-2"></i> @Model.ServiceLevel
+                </h5>
+            </div>
+            <div class="card-body p-4">
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-user me-2 text-danger"></i> Client
+                    </div>
+                    <div class="col-8 fw-bold">@Model.Client?.Name</div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-calendar-day me-2 text-danger"></i> Start Date
+                    </div>
+                    <div class="col-8">@Model.StartDate.ToString("dd MMMM yyyy")</div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-calendar-check me-2 text-danger"></i> End Date
+                    </div>
+                    <div class="col-8">@Model.EndDate.ToString("dd MMMM yyyy")</div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-circle-half-stroke me-2 text-danger"></i> Status
+                    </div>
+                    <div class="col-8">
+                        <span class="badge @badgeClass px-3 py-2">@Model.Status</span>
+                    </div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-layer-group me-2 text-danger"></i> Service Level
+                    </div>
+                    <div class="col-8">@Model.ServiceLevel</div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-file-pdf me-2 text-danger"></i> Agreement
+                    </div>
+                    <div class="col-8">
+                        @if (!string.IsNullOrEmpty(Model.SignedAgreementPath))
+                        {
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2">
+                                <i class="fa-solid fa-circle-check me-1"></i> PDF on record — will be deleted
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-muted border">No file uploaded</span>
+                        }
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card shadow-sm border-0 p-4">
+            <p class="text-muted mb-4 text-center">
+                Are you absolutely sure you want to delete the <strong>@Model.ServiceLevel</strong> contract?
+            </p>
+            <form asp-action="Delete" class="d-flex gap-3 justify-content-center">
+                <input type="hidden" asp-for="Id" />
+                <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 fw-bold">
+                    <i class="fa-solid fa-ban me-2"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-danger px-5 py-2 fw-bold shadow">
+                    <i class="fa-solid fa-trash me-2"></i> Yes, Delete Contract
+                </button>
+            </form>
+        </div>
+
+    </div>
 </div>

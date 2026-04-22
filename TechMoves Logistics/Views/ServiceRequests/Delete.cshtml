@@ -1,63 +1,122 @@
 ﻿@model TechMoves_Logistics.Models.ServiceRequest
 
 @{
-    ViewData["Title"] = "Delete";
+    ViewData["Title"] = "Delete Service Request";
+    var srBadge = Model.Status.ToString() switch
+    {
+        "Pending" => "bg-warning text-dark",
+        "InProgress" => "bg-primary",
+        "Completed" => "bg-success",
+        "Cancelled" => "bg-danger",
+        _ => "bg-secondary"
+    };
 }
 
-<h1>Delete</h1>
+<div class="row justify-content-center">
+    <div class="col-md-7">
 
-<h3>Are you sure you want to delete this?</h3>
-<div>
-    <h4>ServiceRequest</h4>
-    <hr />
-    <dl class="row">
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Contract)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Contract.ServiceLevel)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CostZAR)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CostZAR)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CostUSD)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CostUSD)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.ExchangeRateUsed)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ExchangeRateUsed)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Status)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Status)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CreatedAt)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CreatedAt)
-        </dd>
-    </dl>
-    
-    <form asp-action="Delete">
-        <input type="hidden" asp-for="Id" />
-        <input type="submit" value="Delete" class="btn btn-danger" /> |
-        <a asp-action="Index">Back to List</a>
-    </form>
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-0 text-danger"><i class="fa-solid fa-triangle-exclamation me-2"></i> Delete Service Request</h2>
+                <p class="text-muted mb-0">This action is permanent and cannot be undone</p>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Requests
+            </a>
+        </div>
+
+        <!-- Warning Banner -->
+        <div class="alert alert-danger border-0 shadow-sm mb-4 d-flex align-items-center gap-3">
+            <i class="fa-solid fa-circle-exclamation fa-2x"></i>
+            <div>
+                <strong>Warning!</strong> You are about to permanently delete this service request
+                and all its associated cost and currency data.
+            </div>
+        </div>
+
+        <!-- Record Summary Card -->
+        <div class="card shadow-sm border-danger border-2 mb-4">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="mb-0 fw-bold">
+                    <i class="fa-solid fa-clipboard me-2"></i> @Model.Description
+                </h5>
+            </div>
+            <div class="card-body p-4">
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-file-contract me-2 text-danger"></i> Contract
+                    </div>
+                    <div class="col-8 fw-bold">@Model.Contract?.ServiceLevel</div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-align-left me-2 text-danger"></i> Description
+                    </div>
+                    <div class="col-8">@Model.Description</div>
+                </div>
+                <hr class="my-2" />
+
+                <!-- Currency Mini Summary -->
+                <div class="row g-3 my-2">
+                    <div class="col-md-4">
+                        <div class="card bg-light border-0 text-center p-3">
+                            <small class="text-muted fw-semibold text-uppercase">Cost (USD)</small>
+                            <h5 class="fw-bold text-dark mt-1">$@((Model.CostUSD ?? 0m).ToString("N2"))</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-danger bg-opacity-10 border-0 text-center p-3">
+                            <small class="text-muted fw-semibold text-uppercase">Cost (ZAR)</small>
+                            <h5 class="fw-bold text-danger mt-1">R @Model.CostZAR.ToString("N2")</h5>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card bg-light border-0 text-center p-3">
+                            <small class="text-muted fw-semibold text-uppercase">Rate Used</small>
+                            <h5 class="fw-bold text-dark mt-1">@((Model.ExchangeRateUsed ?? 0m).ToString("N4"))</h5>
+                        </div>
+                    </div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-circle-half-stroke me-2 text-danger"></i> Status
+                    </div>
+                    <div class="col-8">
+                        <span class="badge @srBadge px-3 py-2">@Model.Status</span>
+                    </div>
+                </div>
+                <hr class="my-2" />
+
+                <div class="row mb-3 align-items-center">
+                    <div class="col-4 text-muted fw-semibold small text-uppercase">
+                        <i class="fa-solid fa-clock me-2 text-danger"></i> Created
+                    </div>
+                    <div class="col-8 text-muted">@Model.CreatedAt.ToString("dd MMMM yyyy, HH:mm")</div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card shadow-sm border-0 p-4">
+            <p class="text-muted mb-4 text-center">
+                Are you absolutely sure you want to delete this service request for <strong>@Model.Contract?.ServiceLevel</strong>?
+            </p>
+            <form asp-action="Delete" class="d-flex gap-3 justify-content-center">
+                <input type="hidden" asp-for="Id" />
+                <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 fw-bold">
+                    <i class="fa-solid fa-ban me-2"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-danger px-5 py-2 fw-bold shadow">
+                    <i class="fa-solid fa-trash me-2"></i> Yes, Delete Request
+                </button>
+            </form>
+        </div>
+
+    </div>
 </div>
