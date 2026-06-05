@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using TechMoves_Logistics.Data;
 using TechMoves_Logistics.Models;
 using TechMoves_Logistics.Repositories.Interfaces;
@@ -54,4 +54,3 @@ namespace TechMoves_Logistics.Repositories
         }
     }
 }
-
