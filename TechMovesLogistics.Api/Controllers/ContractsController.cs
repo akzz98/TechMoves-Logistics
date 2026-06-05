@@ -47,5 +47,31 @@ namespace TechMovesLogistics.Api.Controllers
 
             return Created($"/api/contracts/{created.Id}", ContractResponseDto.FromEntity(created));
         }
+
+        // PATCH /api/contracts/{id}/status
+        [HttpPatch("{id}/status")]
+        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateContractStatus(int id, [FromBody] UpdateContractStatusRequestDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                await _contractService.UpdateContractStatusAsync(id, request.Status);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound();
+            }
+
+            var updated = await _contractService.GetContractByIdAsync(id);
+            if (updated == null)
+                return NotFound();
+
+            return Ok(ContractResponseDto.FromEntity(updated));
+        }
     }
 }

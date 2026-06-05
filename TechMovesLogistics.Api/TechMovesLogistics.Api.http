@@ -1,6 +1,37 @@
-@TechMovesLogistics.Api_HostAddress = http://localhost:5182
+@TechMovesLogistics.Api_HostAddress = https://localhost:7216
 
-GET {{TechMovesLogistics.Api_HostAddress}}/weatherforecast/
+### GET all contracts
+GET {{TechMovesLogistics.Api_HostAddress}}/api/contracts
 Accept: application/json
+
+###
+
+### GET contracts filtered by status
+GET {{TechMovesLogistics.Api_HostAddress}}/api/contracts?status=Active
+Accept: application/json
+
+###
+
+### POST create contract (use a valid clientId from your database)
+POST {{TechMovesLogistics.Api_HostAddress}}/api/contracts
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "startDate": "2026-01-01",
+  "endDate": "2026-12-31",
+  "status": "Draft",
+  "serviceLevel": "Premium Freight"
+}
+
+###
+
+### PATCH update contract status (cannot test in browser address bar — use Send Request here)
+PATCH {{TechMovesLogistics.Api_HostAddress}}/api/contracts/1/status
+Content-Type: application/json
+
+{
+  "status": "Active"
+}
 
 ###
