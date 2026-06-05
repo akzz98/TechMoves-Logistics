@@ -10,10 +10,12 @@ namespace TechMovesLogistics.Api.Controllers
     public class ContractsController : ControllerBase
     {
         private readonly IContractService _contractService;
+        private readonly IFileService _fileService;
 
-        public ContractsController(IContractService contractService)
+        public ContractsController(IContractService contractService, IFileService fileService)
         {
             _contractService = contractService;
+            _fileService = fileService;
         }
 
         // GET /api/contracts?startDate=&endDate=&status=
@@ -27,6 +29,19 @@ namespace TechMovesLogistics.Api.Controllers
             var contracts = await _contractService.SearchContractsAsync(startDate, endDate, status);
             var response = contracts.Select(ContractResponseDto.FromEntity);
             return Ok(response);
+        }
+
+        // GET /api/contracts/{id}
+        [HttpGet("{id}")]
+        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetContract(int id)
+        {
+            var contract = await _contractService.GetContractByIdAsync(id);
+            if (contract == null)
+                return NotFound();
+
+            return Ok(ContractResponseDto.FromEntity(contract));
         }
 
         // POST /api/contracts
@@ -46,6 +61,30 @@ namespace TechMovesLogistics.Api.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError);
 
             return Created($"/api/contracts/{created.Id}", ContractResponseDto.FromEntity(created));
+        }
+
+        // PUT /api/contracts/{id}
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateContract(int id, [FromBody] UpdateContractRequestDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var contract = await _contractService.GetContractByIdAsync(id);
+            if (contract == null)
+                return NotFound();
+
+            request.ApplyTo(contract);
+            await _contractService.UpdateContractAsync(contract);
+
+            var updated = await _contractService.GetContractByIdAsync(id);
+            if (updated == null)
+                return NotFound();
+
+            return Ok(ContractResponseDto.FromEntity(updated));
         }
 
         // PATCH /api/contracts/{id}/status
@@ -72,6 +111,23 @@ namespace TechMovesLogistics.Api.Controllers
                 return NotFound();
 
             return Ok(ContractResponseDto.FromEntity(updated));
+        }
+
+        // DELETE /api/contracts/{id}
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeleteContract(int id)
+        {
+            var contract = await _contractService.GetContractByIdAsync(id);
+            if (contract == null)
+                return NotFound();
+
+            if (!string.IsNullOrEmpty(contract.SignedAgreementPath))
+                _fileService.DeleteFile(contract.SignedAgreementPath);
+
+            await _contractService.DeleteContractAsync(id);
+            return NoContent();
         }
     }
 }

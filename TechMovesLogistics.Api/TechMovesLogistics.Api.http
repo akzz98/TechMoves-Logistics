@@ -36,6 +36,31 @@ Content-Type: application/json
 
 ###
 
+### GET contract by id
+GET {{TechMovesLogistics.Api_HostAddress}}/api/contracts/1
+Accept: application/json
+
+###
+
+### PUT update contract
+PUT {{TechMovesLogistics.Api_HostAddress}}/api/contracts/1
+Content-Type: application/json
+
+{
+  "clientId": 1,
+  "startDate": "2026-01-01",
+  "endDate": "2026-12-31",
+  "status": "Active",
+  "serviceLevel": "Standard Freight"
+}
+
+###
+
+### DELETE contract (deletes linked PDF if present; cascades service requests)
+DELETE {{TechMovesLogistics.Api_HostAddress}}/api/contracts/1
+
+###
+
 ### GET all clients
 GET {{TechMovesLogistics.Api_HostAddress}}/api/clients
 Accept: application/json
