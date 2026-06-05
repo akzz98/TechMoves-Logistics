@@ -28,5 +28,24 @@ namespace TechMovesLogistics.Api.Controllers
             var response = contracts.Select(ContractResponseDto.FromEntity);
             return Ok(response);
         }
+
+        // POST /api/contracts
+        [HttpPost]
+        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> CreateContract([FromBody] CreateContractRequestDto request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var contract = request.ToEntity();
+            await _contractService.CreateContractAsync(contract);
+
+            var created = await _contractService.GetContractByIdAsync(contract.Id);
+            if (created == null)
+                return StatusCode(StatusCodes.Status500InternalServerError);
+
+            return Created($"/api/contracts/{created.Id}", ContractResponseDto.FromEntity(created));
+        }
     }
 }
