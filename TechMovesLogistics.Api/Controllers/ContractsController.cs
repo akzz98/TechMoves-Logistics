@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using TechMovesLogistics.Api.Dtos;
 using TechMoves_Logistics.Models.Enums;
 using TechMoves_Logistics.Services.Interfaces;
 
@@ -24,7 +25,8 @@ namespace TechMovesLogistics.Api.Controllers
             [FromQuery] ContractStatus? status)
         {
             var contracts = await _contractService.SearchContractsAsync(startDate, endDate, status);
-            return Ok(contracts);
+            var response = contracts.Select(ContractResponseDto.FromEntity);
+            return Ok(response);
         }
     }
 }
