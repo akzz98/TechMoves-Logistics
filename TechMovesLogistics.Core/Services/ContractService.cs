@@ -31,5 +31,15 @@ namespace TechMoves_Logistics.Services
 
         public async Task DeleteContractAsync(int id)
             => await _contractRepository.DeleteAsync(id);
+
+        public async Task UpdateContractStatusAsync(int id, ContractStatus newStatus)
+        {
+            var contract = await _contractRepository.GetByIdAsync(id);
+            if (contract == null)
+                throw new KeyNotFoundException($"Contract with id {id} was not found.");
+
+            contract.Status = newStatus;
+            await _contractRepository.UpdateAsync(contract);
+        }
     }
 }

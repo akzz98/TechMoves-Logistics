@@ -11,5 +11,6 @@ namespace TechMoves_Logistics.Services.Interfaces
         Task CreateContractAsync(Contract contract);
         Task UpdateContractAsync(Contract contract);
         Task DeleteContractAsync(int id);
+        Task UpdateContractStatusAsync(int id, ContractStatus newStatus);
     }
 }
