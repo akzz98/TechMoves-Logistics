@@ -35,3 +35,44 @@ Content-Type: application/json
 }
 
 ###
+
+### GET all clients
+GET {{TechMovesLogistics.Api_HostAddress}}/api/clients
+Accept: application/json
+
+###
+
+### GET client by id
+GET {{TechMovesLogistics.Api_HostAddress}}/api/clients/1
+Accept: application/json
+
+###
+
+### POST create client
+POST {{TechMovesLogistics.Api_HostAddress}}/api/clients
+Content-Type: application/json
+
+{
+  "name": "Acme Logistics",
+  "contactDetails": "admin@acme.com",
+  "region": "Gauteng"
+}
+
+###
+
+### PUT update client
+PUT {{TechMovesLogistics.Api_HostAddress}}/api/clients/1
+Content-Type: application/json
+
+{
+  "name": "Acme Logistics Updated",
+  "contactDetails": "contact@acme.com",
+  "region": "Western Cape"
+}
+
+###
+
+### DELETE client (use an id with no linked contracts, or expect FK error)
+DELETE {{TechMovesLogistics.Api_HostAddress}}/api/clients/1
+
+###
