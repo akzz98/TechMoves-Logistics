@@ -56,6 +56,18 @@ Content-Type: application/json
 
 ###
 
+### GET download contract PDF (works in browser after upload)
+GET {{TechMovesLogistics.Api_HostAddress}}/api/contracts/1/agreement
+
+###
+
+### POST upload contract PDF — use Postman or curl (multipart/form-data)
+# Postman: POST .../api/contracts/1/agreement → Body → form-data → key "file" (File) → pick .pdf
+# PowerShell:
+# curl.exe -X POST "{{TechMovesLogistics.Api_HostAddress}}/api/contracts/1/agreement" -F "file=@C:\path\to\agreement.pdf"
+
+###
+
 ### DELETE contract (deletes linked PDF if present; cascades service requests)
 DELETE {{TechMovesLogistics.Api_HostAddress}}/api/contracts/1
 

@@ -113,6 +113,63 @@ namespace TechMovesLogistics.Api.Controllers
             return Ok(ContractResponseDto.FromEntity(updated));
         }
 
+        // POST /api/contracts/{id}/agreement
+        [HttpPost("{id}/agreement")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(ContractResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UploadAgreement(int id, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("A PDF file is required.");
+
+            var contract = await _contractService.GetContractByIdAsync(id);
+            if (contract == null)
+                return NotFound();
+
+            try
+            {
+                if (!string.IsNullOrEmpty(contract.SignedAgreementPath))
+                    _fileService.DeleteFile(contract.SignedAgreementPath);
+
+                contract.SignedAgreementPath = await _fileService.SavePdfAsync(file);
+                await _contractService.UpdateContractAsync(contract);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+
+            var updated = await _contractService.GetContractByIdAsync(id);
+            if (updated == null)
+                return NotFound();
+
+            return Ok(ContractResponseDto.FromEntity(updated));
+        }
+
+        // GET /api/contracts/{id}/agreement
+        [HttpGet("{id}/agreement")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DownloadAgreement(int id)
+        {
+            var contract = await _contractService.GetContractByIdAsync(id);
+            if (contract == null || string.IsNullOrEmpty(contract.SignedAgreementPath))
+                return NotFound();
+
+            var filePath = Path.Combine(
+                Directory.GetCurrentDirectory(),
+                "wwwroot",
+                contract.SignedAgreementPath.TrimStart('/'));
+
+            if (!System.IO.File.Exists(filePath))
+                return NotFound();
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+            return File(fileBytes, "application/pdf", $"Contract_Agreement_{id}.pdf");
+        }
+
         // DELETE /api/contracts/{id}
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
