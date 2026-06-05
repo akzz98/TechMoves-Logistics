@@ -1,4 +1,4 @@
-﻿using TechMoves_Logistics.Models;
+using TechMoves_Logistics.Models;
 
 namespace TechMoves_Logistics.Services.Interfaces
 {

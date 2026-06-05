@@ -1,14 +1,18 @@
-﻿using TechMoves_Logistics.Services.Interfaces;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using TechMoves_Logistics.Services.Interfaces;
 
 namespace TechMoves_Logistics.Services
 {
     public class FileService : IFileService
     {
         private readonly IWebHostEnvironment _environment;
+
         public FileService(IWebHostEnvironment environment)
         {
             _environment = environment;
         }
+
         public bool IsValidPdf(IFormFile file)
         {
             if (file == null || file.Length == 0)
@@ -25,6 +29,7 @@ namespace TechMoves_Logistics.Services
 
             return true;
         }
+
         public async Task<string> SavePdfAsync(IFormFile file)
         {
             if (!IsValidPdf(file))
@@ -45,9 +50,11 @@ namespace TechMoves_Logistics.Services
             {
                 await file.CopyToAsync(fileStream);
             }
+
             // Return relative path for storage in DB
             return $"/uploads/{uniqueFileName}";
         }
+
         public void DeleteFile(string filePath)
         {
             if (string.IsNullOrEmpty(filePath)) return;

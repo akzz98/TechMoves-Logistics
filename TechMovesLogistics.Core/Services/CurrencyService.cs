@@ -1,11 +1,11 @@
-﻿using System.Text.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using TechMoves_Logistics.Services.Interfaces;
 
 namespace TechMoves_Logistics.Services
 {
     public class CurrencyService : ICurrencyService
     {
-
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
 
@@ -40,6 +40,7 @@ namespace TechMoves_Logistics.Services
                 return 18.50m;
             }
         }
+
         public decimal ConvertUsdToZar(decimal usdAmount, decimal rate)
         {
             if (usdAmount < 0)

@@ -1,4 +1,6 @@
-﻿namespace TechMoves_Logistics.Services.Interfaces
+using Microsoft.AspNetCore.Http;
+
+namespace TechMoves_Logistics.Services.Interfaces
 {
     public interface IFileService
     {
