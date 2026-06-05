@@ -113,3 +113,48 @@ Content-Type: application/json
 DELETE {{TechMovesLogistics.Api_HostAddress}}/api/clients/1
 
 ###
+
+### GET all service requests
+GET {{TechMovesLogistics.Api_HostAddress}}/api/servicerequests
+Accept: application/json
+
+###
+
+### GET service request by id
+GET {{TechMovesLogistics.Api_HostAddress}}/api/servicerequests/1
+Accept: application/json
+
+###
+
+### POST create service request (contract must be Active — not Expired/OnHold)
+POST {{TechMovesLogistics.Api_HostAddress}}/api/servicerequests
+Content-Type: application/json
+
+{
+  "contractId": 1,
+  "description": "International freight shipment to Cape Town",
+  "costUSD": 500.00,
+  "status": "Pending"
+}
+
+###
+
+### PUT update service request
+PUT {{TechMovesLogistics.Api_HostAddress}}/api/servicerequests/1
+Content-Type: application/json
+
+{
+  "contractId": 1,
+  "description": "Updated shipment details",
+  "costZAR": 9250.00,
+  "costUSD": 500.00,
+  "exchangeRateUsed": 18.50,
+  "status": "InProgress"
+}
+
+###
+
+### DELETE service request
+DELETE {{TechMovesLogistics.Api_HostAddress}}/api/servicerequests/1
+
+###
