@@ -1,5 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Diagnostics.Contracts;
+using System.ComponentModel.DataAnnotations;
 
 namespace TechMoves_Logistics.Models
 {

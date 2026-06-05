@@ -1,7 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using TechMoves_Logistics.Models.Enums;
-
 
 namespace TechMoves_Logistics.Models
 {

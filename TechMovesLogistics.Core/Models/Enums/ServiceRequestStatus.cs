@@ -1,4 +1,4 @@
-﻿namespace TechMoves_Logistics.Models.Enums
+namespace TechMoves_Logistics.Models.Enums
 {
     public enum ServiceRequestStatus
     {
