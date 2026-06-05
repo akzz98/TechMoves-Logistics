@@ -1,4 +1,6 @@
 <Solution>
   <Project Path="TechMoves Logistics/TechMovesLogistics.csproj" />
+  <Project Path="TechMovesLogistics.Api/TechMovesLogistics.Api.csproj" Id="d1bfdad8-4d59-4f2e-9814-cc80fc4dc40a" />
+  <Project Path="TechMovesLogistics.Core/TechMovesLogistics.Core.csproj" Id="34f612a6-48ac-4b3b-8f0d-b17e7cef7f8e" />
   <Project Path="TechMovesLogistics.Tests/TechMovesLogistics.Tests.csproj" Id="a02ef477-3779-4b44-9781-8b6d394933fc" />
 </Solution>
