@@ -158,3 +158,9 @@ Content-Type: application/json
 DELETE {{TechMovesLogistics.Api_HostAddress}}/api/servicerequests/1
 
 ###
+
+### GET USD to ZAR exchange rate (works in browser)
+GET {{TechMovesLogistics.Api_HostAddress}}/api/currency/usd-zar
+Accept: application/json
+
+###
