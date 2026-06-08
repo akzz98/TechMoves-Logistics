@@ -1,38 +1,37 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TechMoves_Logistics.Data;
 using TechMoves_Logistics.Models;
-using TechMoves_Logistics.Services.Interfaces;
+using TechMoves_Logistics.Services;
 
 namespace TechMoves_Logistics.Controllers
 {
+    [Authorize]
     public class ServiceRequestsController : Controller
     {
-        private readonly IServiceRequestService _reqService;
-        private readonly IContractService _contractService;
-        private readonly ICurrencyService _currencyService;
+        private readonly IServiceRequestsApiClient _serviceRequestsApiClient;
+        private readonly IContractsApiClient _contractsApiClient;
+        private readonly ICurrencyApiClient _currencyApiClient;
 
-        public ServiceRequestsController(IServiceRequestService reqService, IContractService contractService, ICurrencyService currencyService)
+        public ServiceRequestsController(
+            IServiceRequestsApiClient serviceRequestsApiClient,
+            IContractsApiClient contractsApiClient,
+            ICurrencyApiClient currencyApiClient)
         {
-            _reqService = reqService;
-            _contractService = contractService;
-            _currencyService = currencyService;
+            _serviceRequestsApiClient = serviceRequestsApiClient;
+            _contractsApiClient = contractsApiClient;
+            _currencyApiClient = currencyApiClient;
         }
 
         // GET: ServiceRequests
-        public async Task<IActionResult> Index() => View(await _reqService.GetAllAsync());
+        public async Task<IActionResult> Index() => View(await _serviceRequestsApiClient.GetAllAsync());
 
         // GET: ServiceRequests/Details/5
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
-            var serviceRequest = await _reqService.GetByIdAsync(id.Value);
+            var serviceRequest = await _serviceRequestsApiClient.GetByIdAsync(id.Value);
             if (serviceRequest == null) return NotFound();
 
             return View(serviceRequest);
@@ -41,8 +40,12 @@ namespace TechMoves_Logistics.Controllers
         // GET: ServiceRequests/Create
         public async Task<IActionResult> Create(int? contractId)
         {
-            ViewData["ContractId"] = new SelectList(await _contractService.GetAllContractsAsync(), "Id", "ServiceLevel", contractId);
-            ViewBag.ExchangeRate = await _currencyService.GetUsdToZarRateAsync();
+            ViewData["ContractId"] = new SelectList(
+                await _contractsApiClient.SearchAsync(null, null, null),
+                "Id",
+                "ServiceLevel",
+                contractId);
+            ViewBag.ExchangeRate = await _currencyApiClient.GetUsdToZarRateAsync();
             return View();
         }
 
@@ -55,20 +58,13 @@ namespace TechMoves_Logistics.Controllers
         {
             try
             {
-                // Currency conversion before saving
-                var rate = await _currencyService.GetUsdToZarRateAsync();
-                serviceRequest.ExchangeRateUsed = rate;
-
-                if (serviceRequest.CostUSD.HasValue)
-                    serviceRequest.CostZAR = _currencyService.ConvertUsdToZar(serviceRequest.CostUSD.Value, rate);
-
-                // Business rule validation happens inside this service call
-                await _reqService.CreateServiceRequestAsync(serviceRequest);
+                // Currency conversion and business rules handled by the API
+                await _serviceRequestsApiClient.CreateAsync(serviceRequest);
                 return RedirectToAction(nameof(Index));
             }
             catch (InvalidOperationException ex)
             {
-                // Catches "Expired" or "OnHold" contract violations from Service Layer
+                // Catches "Expired" or "OnHold" contract violations from the API
                 ModelState.AddModelError("", ex.Message);
             }
             catch (Exception)
@@ -76,8 +72,12 @@ namespace TechMoves_Logistics.Controllers
                 ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
             }
 
-            ViewData["ContractId"] = new SelectList(await _contractService.GetAllContractsAsync(), "Id", "ServiceLevel", serviceRequest.ContractId);
-            ViewBag.ExchangeRate = await _currencyService.GetUsdToZarRateAsync();
+            ViewData["ContractId"] = new SelectList(
+                await _contractsApiClient.SearchAsync(null, null, null),
+                "Id",
+                "ServiceLevel",
+                serviceRequest.ContractId);
+            ViewBag.ExchangeRate = await _currencyApiClient.GetUsdToZarRateAsync();
             return View(serviceRequest);
         }
 
@@ -86,10 +86,14 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var serviceRequest = await _reqService.GetByIdAsync(id.Value);
+            var serviceRequest = await _serviceRequestsApiClient.GetByIdAsync(id.Value);
             if (serviceRequest == null) return NotFound();
 
-            ViewData["ContractId"] = new SelectList(await _contractService.GetAllContractsAsync(), "Id", "ServiceLevel", serviceRequest.ContractId);
+            ViewData["ContractId"] = new SelectList(
+                await _contractsApiClient.SearchAsync(null, null, null),
+                "Id",
+                "ServiceLevel",
+                serviceRequest.ContractId);
             return View(serviceRequest);
         }
 
@@ -104,10 +108,16 @@ namespace TechMoves_Logistics.Controllers
 
             if (ModelState.IsValid)
             {
-                await _reqService.UpdateAsync(serviceRequest);
+                var updated = await _serviceRequestsApiClient.UpdateAsync(id, serviceRequest);
+                if (updated == null) return NotFound();
+
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ContractId"] = new SelectList(await _contractService.GetAllContractsAsync(), "Id", "ServiceLevel", serviceRequest.ContractId);
+            ViewData["ContractId"] = new SelectList(
+                await _contractsApiClient.SearchAsync(null, null, null),
+                "Id",
+                "ServiceLevel",
+                serviceRequest.ContractId);
             return View(serviceRequest);
         }
 
@@ -116,7 +126,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var serviceRequest = await _reqService.GetByIdAsync(id.Value);
+            var serviceRequest = await _serviceRequestsApiClient.GetByIdAsync(id.Value);
             if (serviceRequest == null) return NotFound();
 
             return View(serviceRequest);
@@ -127,7 +137,9 @@ namespace TechMoves_Logistics.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _reqService.DeleteAsync(id);
+            var deleted = await _serviceRequestsApiClient.DeleteAsync(id);
+            if (!deleted) return NotFound();
+
             return RedirectToAction(nameof(Index));
         }
     }
