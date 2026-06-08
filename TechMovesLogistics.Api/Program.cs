@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using TechMovesLogistics.Api.Services;
 using TechMoveLogistics.Repositories;
 using TechMoveLogistics.Repositories.Interfaces;
 using TechMoves_Logistics.Data;
@@ -49,6 +50,7 @@ builder.Services.AddScoped<IContractRepository, ContractRepository>();
 builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
 
 // Services
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IContractService, ContractService>();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
 builder.Services.AddScoped<IFileService, FileService>();
