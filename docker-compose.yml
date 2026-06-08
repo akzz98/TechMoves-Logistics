@@ -9,6 +9,8 @@ services:
       - "1433:1433"
     volumes:
       - sqlserver-data:/var/opt/mssql
+    networks:
+      - glms-network
     healthcheck:
       test:
         [
@@ -31,7 +33,10 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Internal Docker DNS — use service name, not localhost
       ConnectionStrings__DefaultConnection: "Server=sql-server-db,1433;Database=TechMovesLogisticsDB;User Id=sa;Password=TechMoves@Docker123;TrustServerCertificate=True;MultipleActiveResultSets=true"
+    networks:
+      - glms-network
 
   glms-frontend-web:
     build:
@@ -43,7 +48,15 @@ services:
     ports:
       - "8081:8080"
     environment:
+      # MVC HttpClient calls the API by compose service name
       ApiSettings__BaseUrl: "http://glms-backend-api:8080"
+    networks:
+      - glms-network
+
+networks:
+  glms-network:
+    name: glms-network
+    driver: bridge
 
 volumes:
   sqlserver-data:
