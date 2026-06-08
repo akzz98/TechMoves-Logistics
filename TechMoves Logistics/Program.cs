@@ -44,6 +44,7 @@ builder.Services.AddHttpClient<IApiAuthService, ApiAuthService>(client =>
 builder.Services.AddScoped<IClientsApiClient, ClientsApiClient>();
 builder.Services.AddScoped<IContractsApiClient, ContractsApiClient>();
 builder.Services.AddScoped<IServiceRequestsApiClient, ServiceRequestsApiClient>();
+builder.Services.AddScoped<ICurrencyApiClient, CurrencyApiClient>();
 
 var app = builder.Build();
 
