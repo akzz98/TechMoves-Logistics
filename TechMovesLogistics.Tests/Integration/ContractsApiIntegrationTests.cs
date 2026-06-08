@@ -80,6 +80,39 @@ namespace TechMovesLogistics.Tests.Integration
             Assert.True(contracts[0].EndDate <= new DateTime(2026, 12, 31));
         }
 
+        // POST /api/contracts
+        [Fact]
+        public async Task PostContract_Returns201_Created()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            var request = new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = new DateTime(2026, 7, 1),
+                EndDate = new DateTime(2027, 6, 30),
+                Status = ContractStatus.Draft,
+                ServiceLevel = "Premium"
+            };
+
+            var response = await client.PostAsJsonAsync("/api/contracts", request);
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            var contract = await response.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(contract);
+            Assert.True(contract.Id > 0);
+            Assert.Equal(clientId, contract.ClientId);
+            Assert.Equal(request.StartDate, contract.StartDate);
+            Assert.Equal(request.EndDate, contract.EndDate);
+            Assert.Equal(ContractStatus.Draft, contract.Status);
+            Assert.Equal("Premium", contract.ServiceLevel);
+
+            Assert.NotNull(response.Headers.Location);
+            Assert.Contains($"/api/contracts/{contract.Id}", response.Headers.Location.ToString());
+        }
+
         private async Task<HttpClient> CreateAuthenticatedClientAsync()
         {
             var client = _factory.CreateClient();
