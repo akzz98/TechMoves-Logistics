@@ -1,391 +1,433 @@
-# TechMoves Logistics
+# TechMoves Logistics (GLMS)
 
-A comprehensive logistics management system built with ASP.NET Core 10, Entity Framework Core, and SQL Server. This application enables efficient management of clients, contracts, and service requests with multi-currency support for ZAR (South African Rand) and USD currencies.
+Global Logistics Management System for **TechMoves Logistics** — an enterprise logistics application built with ASP.NET Core 10. The solution follows a **service-oriented architecture (SOA)**: a dedicated REST Web API owns all database access, the MVC web app consumes the API via `HttpClient`, endpoints are secured with **JWT bearer authentication**, and the full stack runs locally or in **Docker Compose** with automated **GitHub Actions** CI.
+
+**Module context:** PROG7311 — Enterprise Application Development (Part 3 POE)
+
+---
 
 ## Table of Contents
 
 - [Features](#features)
+- [Architecture](#architecture)
+- [Solution Structure](#solution-structure)
 - [Technology Stack](#technology-stack)
-- [Project Structure](#project-structure)
 - [Prerequisites](#prerequisites)
-- [Installation & Setup](#installation--setup)
-- [Database Configuration](#database-configuration)
-- [Running the Application](#running-the-application)
-- [Project Architecture](#project-architecture)
-- [Key Features Explained](#key-features-explained)
+- [Quick Start — Docker (recommended)](#quick-start--docker-recommended)
+- [Local Development Setup](#local-development-setup)
+- [Authentication](#authentication)
+- [REST API](#rest-api)
+- [Database & Migrations](#database--migrations)
 - [Testing](#testing)
+- [CI/CD](#cicd)
+- [Configuration](#configuration)
+- [Troubleshooting](#troubleshooting)
+
+---
 
 ## Features
 
 ### Client Management
-- Create, read, update, and delete client information
-- Store client contact details and regional information
-- Track multiple contracts per client
-- Comprehensive client directory
+- Full CRUD for clients (name, contact details, region)
+- One-to-many relationship with contracts
 
 ### Contract Management
-- Create and manage service contracts with clients
-- Define contract periods (start and end dates)
-- Track contract status (Draft, Active, Completed, Expired)
-- Specify service levels and terms
-- Upload and store signed agreement documents (PDF)
-- Search contracts by date range and status
+- Create and manage service contracts linked to clients
+- Contract periods (start/end dates) and service levels
+- Status lifecycle: **Draft**, **Active**, **Expired**, **OnHold**
+- Search/filter by date range and status
+- Upload and download signed agreement PDFs
 
 ### Service Request Management
-- Create service requests under existing contracts
-- Track request status (Pending, In Progress, Completed, Cancelled)
-- Detailed description of requested services
-- Multi-currency cost tracking (ZAR and USD)
-- Automatic exchange rate recording at time of request creation
-- Timestamp tracking for all requests
+- Create requests under active contracts
+- Status tracking: **Pending**, **InProgress**, **Completed**, **Cancelled**
+- Business rule: requests blocked when contract is **Expired** or **OnHold**
+- Multi-currency cost tracking (ZAR and USD) with exchange rate snapshot
 
 ### Currency Conversion
-- Real-time USD to ZAR exchange rate integration
-- External API integration with ExchangeRate-API service
-- Fallback rate mechanism for API downtime
-- Automatic rate recording for auditing purposes
+- Live USD → ZAR rate via ExchangeRate-API
+- Fallback rate when the external API is unavailable
 
-### File Management
-- Secure file upload for signed agreements
-- File storage in dedicated upload directory
-- File validation and security measures
+### Security & SOA
+- JWT-secured REST API (`[Authorize]` on protected controllers)
+- MVC login stores token in session; `JwtAuthorizationHandler` attaches Bearer token to API calls
+- Presentation tier has **no** EF Core or database connection strings
 
-## Technology Stack
+---
 
-- **Framework**: ASP.NET Core 10
-- **Language**: C# 12+
-- **Database**: SQL Server (LocalDB for development)
-- **ORM**: Entity Framework Core 10.0.6
-- **Pattern**: Repository Pattern with Service Layer
-- **API Integration**: External Currency Exchange API
-- **Testing Framework**: xUnit (with test project structure in place)
+## Architecture
 
-### NuGet Packages
-```xml
-- Microsoft.EntityFrameworkCore (10.0.6)
-- Microsoft.EntityFrameworkCore.SqlServer (10.0.6)
-- Microsoft.EntityFrameworkCore.Design (10.0.6)
-- Microsoft.EntityFrameworkCore.Tools (10.0.6)
-- Microsoft.VisualStudio.Web.CodeGeneration.Design (10.0.2)
-- NuGet.Protocol (6.12.1)
+```mermaid
+flowchart LR
+    subgraph presentation [Presentation Tier]
+        MVC[TechMoves Logistics MVC]
+    end
+    subgraph application [Application Tier]
+        API[TechMovesLogistics.Api]
+        SVC[Services]
+        REPO[Repositories]
+    end
+    subgraph data [Data Tier]
+        SQL[(SQL Server)]
+    end
+
+    MVC -->|HttpClient + JWT| API
+    API --> SVC --> REPO --> SQL
 ```
 
-## Project Structure
+| Tier | Project | Responsibility |
+|------|---------|----------------|
+| Presentation | `TechMoves Logistics` | Razor MVC UI, session login, typed API clients |
+| Application | `TechMovesLogistics.Api` | REST endpoints, JWT auth, Swagger, EF migrations |
+| Shared core | `TechMovesLogistics.Core` | Models, `ApplicationDbContext`, repositories, services |
+| Tests | `TechMovesLogistics.Tests` | Unit tests + 18 integration tests |
+
+**Design patterns:** Repository pattern, service layer, dependency injection, DTOs for API responses.
+
+---
+
+## Solution Structure
 
 ```
 TechMoves Logistics/
-├── Controllers/
-│   ├── ClientsController.cs           # Client CRUD operations
-│   ├── ContractsController.cs         # Contract management endpoints
-│   ├── ServiceRequestsController.cs   # Service request management
-│   └── HomeController.cs              # Home page and general routing
-├── Models/
-│   ├── Client.cs                      # Client entity model
-│   ├── Contract.cs                    # Contract entity model
-│   ├── ServiceRequest.cs              # Service request entity model
-│   ├── ErrorViewModel.cs              # Error handling model
-│   └── Enums/
-│       ├── ContractStatus.cs          # Contract status enumeration
-│       └── ServiceRequestStatus.cs    # Service request status enumeration
-├── Data/
-│   └── ApplicationDbContext.cs        # EF Core database context
-├── Repositories/
-│   ├── Interfaces/
-│   │   ├── IClientRepository.cs
-│   │   ├── IContractRepository.cs
-│   │   └── IServiceRequestRepository.cs
-│   ├── ClientRepository.cs            # Client data access
-│   ├── ContractRepository.cs          # Contract data access
-│   └── ServiceRequestRepository.cs    # Service request data access
-├── Services/
-│   ├── Interfaces/
-│   │   ├── IClientService.cs          # (if implemented)
-│   │   ├── IContractService.cs
-│   │   ├── ICurrencyService.cs
-│   │   ├── IFileService.cs
-│   │   └── IServiceRequestService.cs
-│   ├── ContractService.cs             # Contract business logic
-│   ├── CurrencyService.cs             # Currency conversion logic
-│   ├── FileService.cs                 # File upload/management
-│   └── ServiceRequestService.cs       # Service request business logic
-├── Views/
-│   ├── Clients/                       # Client management UI
-│   ├── Contracts/                     # Contract management UI
-│   ├── ServiceRequests/               # Service request UI
-│   ├── Home/                          # Home page views
-│   ├── Shared/                        # Shared layouts and components
-│   ├── _ViewStart.cshtml              # View configuration
-│   └── _ViewImports.cshtml            # Global view imports
-├── Migrations/                        # EF Core database migrations
-├── Properties/
-│   └── launchSettings.json            # Application launch configuration
-├── wwwroot/
-│   ├── css/                           # Stylesheets
-│   ├── js/                            # JavaScript files
-│   ├── lib/                           # Client-side libraries
-│   └── uploads/                       # File upload storage
-├── appsettings.json                   # Application settings (production)
-├── appsettings.Development.json       # Development-specific settings
-├── Program.cs                         # Application startup configuration
-└── TechMovesLogistics.csproj          # Project file
-
-TechMovesLogistics.Tests/
-├── ContractServiceTests.cs            # Contract service unit tests
-├── CurrencyServiceTests.cs            # Currency service unit tests
-├── FileServiceTests.cs                # File service unit tests
-├── ServiceRequestServiceTests.cs      # Service request service unit tests
-└── TechMovesLogistics.Tests.csproj    # Test project file
+├── TechMovesLogistics.slnx              # Solution file
+├── docker-compose.yml                   # Full stack orchestration
+├── .env.example                         # Docker environment template (copy to .env)
+├── .github/workflows/
+│   ├── unit-tests.yml                   # Unit tests on push/PR
+│   ├── integration-tests.yml            # Integration tests + SQL Server container
+│   └── docker-build.yml                 # Validates Dockerfiles build
+├── docs/
+│   └── Technical-Reflection-PROG7311-Part3.docx
+│
+├── TechMovesLogistics.Api/              # REST Web API (owns DB)
+│   ├── Controllers/                     # Auth, Clients, Contracts, ServiceRequests, Currency
+│   ├── Dtos/                            # Request/response DTOs
+│   ├── Migrations/                      # EF Core migrations (source of truth)
+│   ├── Services/                        # JwtTokenService
+│   ├── Dockerfile
+│   └── Program.cs                       # JWT, EF Core, Swagger, auto-migrate on startup
+│
+├── TechMoves Logistics/                 # MVC frontend (no database access)
+│   ├── Controllers/                     # MVC controllers → API clients only
+│   ├── Services/                        # *ApiClient implementations, JWT handler
+│   ├── Filters/                         # ApiExceptionFilter
+│   ├── Views/
+│   ├── Dockerfile
+│   └── Program.cs                       # HttpClient, session, cookie auth
+│
+├── TechMovesLogistics.Core/             # Shared domain & data layer
+│   ├── Models/                          # Client, Contract, ServiceRequest, enums
+│   ├── Data/                            # ApplicationDbContext
+│   ├── Repositories/                    # EF Core data access
+│   └── Services/                        # Business logic
+│
+└── TechMovesLogistics.Tests/
+    ├── ContractServiceTests.cs          # Unit tests
+    ├── CurrencyServiceTests.cs
+    ├── FileServiceTests.cs
+    ├── ServiceRequestServiceTests.cs
+    └── Integration/                     # 18 API integration tests
+        ├── ApiWebApplicationFactory.cs
+        ├── AuthApiIntegrationTests.cs
+        ├── ClientsApiIntegrationTests.cs
+        ├── ContractsApiIntegrationTests.cs
+        ├── ServiceRequestsApiIntegrationTests.cs
+        └── CurrencyApiIntegrationTests.cs
 ```
+
+---
+
+## Technology Stack
+
+| Area | Technology |
+|------|------------|
+| Framework | ASP.NET Core 10, C# |
+| Web UI | ASP.NET Core MVC (Razor) |
+| API | ASP.NET Core Web API, Swagger / OpenAPI (Swashbuckle 10) |
+| Auth | JWT Bearer (RFC 7519), cookie session on MVC |
+| Database | SQL Server (LocalDB dev / containerised in Docker) |
+| ORM | Entity Framework Core 10 (API + Core only) |
+| HTTP client | `IHttpClientFactory`, typed API clients |
+| Containers | Docker multi-stage builds, Docker Compose |
+| Testing | xUnit, `WebApplicationFactory`, Moq |
+| CI | GitHub Actions |
+
+---
 
 ## Prerequisites
 
-- **.NET 10 SDK** - Download from [microsoft.com](https://dotnet.microsoft.com/download)
-- **SQL Server** - LocalDB comes with Visual Studio or install SQL Server Express
-- **Visual Studio 2025** (recommended) or **Visual Studio Code** with C# extension
-- **Git** (for version control)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for containerised run)
+- **SQL Server LocalDB** or SQL Server Express (for local dev / integration tests)
+- Visual Studio 2022+ or VS Code with C# extension
+- Git
 
-## Installation & Setup
+---
 
-### 1. Clone the Repository
-```bash
+## Quick Start — Docker (recommended)
+
+### 1. Clone and configure
+
+```powershell
 git clone <repository-url>
 cd "TechMoves Logistics"
+copy .env.example .env
 ```
 
-### 2. Restore NuGet Packages
-```bash
-cd "TechMoves Logistics"
-dotnet restore
+Edit `.env` if needed (defaults work for local Docker).
+
+### 2. Start the stack
+
+```powershell
+docker compose up --build
 ```
 
-### 3. Configure Database Connection
-The default connection string in `appsettings.json` uses LocalDB:
+### 3. Access the application
+
+| Service | URL |
+|---------|-----|
+| **MVC web app** | http://localhost:8081 |
+| **REST API (Swagger)** | http://localhost:8080/swagger |
+| **SQL Server** | `localhost:1433` (SA password from `.env`) |
+
+### 4. Log in
+
+| Field | Value |
+|-------|-------|
+| Username | `admin` |
+| Password | `Admin@123` |
+
+### Docker services
+
+| Container | Role |
+|-----------|------|
+| `sql-server-db` | SQL Server 2022, persistent volume |
+| `glms-backend-api` | REST API on port 8080, runs EF migrations on startup |
+| `glms-frontend-web` | MVC app on port 8081, calls API via `http://glms-backend-api:8080` |
+
+---
+
+## Local Development Setup
+
+Run **both** the API and MVC projects. The MVC app calls the API using `ApiSettings:BaseUrl`.
+
+### 1. Restore and build
+
+```powershell
+dotnet restore TechMovesLogistics.slnx
+dotnet build TechMovesLogistics.slnx
+```
+
+### 2. Apply database migrations (API project)
+
+```powershell
+dotnet ef database update --project TechMovesLogistics.Api --startup-project TechMovesLogistics.Api
+```
+
+### 3. Start the API
+
+```powershell
+dotnet run --project TechMovesLogistics.Api
+```
+
+Swagger: **https://localhost:7216/swagger**
+
+### 4. Start the MVC app (second terminal)
+
+Ensure `TechMoves Logistics/appsettings.json` points to the API:
+
 ```json
-"ConnectionStrings": {
-    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=TechMovesLogisticsDB;Trusted_Connection=True;MultipleActiveResultSets=true"
+"ApiSettings": {
+  "BaseUrl": "https://localhost:7216"
 }
 ```
 
-To use a different SQL Server instance, update the connection string in `appsettings.json` or `appsettings.Development.json`.
-
-## Database Configuration
-
-### Initial Setup
-
-The database schema is configured through Entity Framework Core migrations.
-
-### 1. Apply Migrations
-```bash
-cd "TechMoves Logistics"
-dotnet ef database update
+```powershell
+dotnet run --project "TechMoves Logistics"
 ```
 
-### 2. Manual Migration (if needed)
-```bash
-# Create a new migration
-dotnet ef migrations add <MigrationName>
+MVC app: **https://localhost:7006**
 
-# Apply migration
-dotnet ef database update
+### Visual Studio — multiple startup projects
+
+1. Right-click solution → **Properties** → **Startup Project**
+2. Select **Multiple startup projects**
+3. Set **TechMovesLogistics.Api** and **TechMoves Logistics** both to **Start**
+4. Press **F5**
+
+---
+
+## Authentication
+
+### MVC (browser)
+1. Navigate to `/Account/Login`
+2. Enter `admin` / `Admin@123`
+3. Session stores the JWT; all API calls include `Authorization: Bearer <token>`
+
+### Swagger
+1. Call `POST /api/auth/login` with the credentials above
+2. Copy the `token` from the response
+3. Click **Authorize** (top right) → paste the token only → **Authorize**
+
+Protected endpoints return **401 Unauthorized** without a valid token.
+
+---
+
+## REST API
+
+Base path: `/api`
+
+| Controller | Key endpoints |
+|------------|---------------|
+| **Auth** | `POST /api/auth/login` |
+| **Clients** | `GET`, `POST`, `GET/{id}`, `PUT/{id}`, `DELETE/{id}` |
+| **Contracts** | `GET` (filters), `POST`, `GET/{id}`, `PUT/{id}`, `PATCH/{id}/status`, `DELETE/{id}`, agreement upload/download |
+| **ServiceRequests** | Full CRUD under `/api/servicerequests` |
+| **Currency** | `GET /api/currency/usd-zar` |
+
+**HTTP status codes:** 200, 201, 204, 400, 401, 404 as appropriate.
+
+Controllers delegate to services/repositories in `TechMovesLogistics.Core`; DTOs prevent circular JSON serialisation.
+
+---
+
+## Database & Migrations
+
+- **Owner:** `TechMovesLogistics.Api` (connection string in `TechMovesLogistics.Api/appsettings.json`)
+- **Migrations folder:** `TechMovesLogistics.Api/Migrations/`
+- **Docker:** migrations applied automatically on API startup via `Database.Migrate()`
+- **Integration tests:** separate test database `TechMovesLogisticsDB_Test` on LocalDB
+
+### Create a new migration
+
+```powershell
+dotnet ef migrations add <MigrationName> --project TechMovesLogistics.Api --startup-project TechMovesLogistics.Api
+dotnet ef database update --project TechMovesLogistics.Api --startup-project TechMovesLogistics.Api
 ```
 
-### Database Schema Overview
+### Schema overview
 
-**Clients Table**
-- Stores client information including name, contact details, and region
-- One-to-many relationship with Contracts
+| Table | Purpose |
+|-------|---------|
+| **Clients** | Client master data |
+| **Contracts** | Linked to clients; status, dates, service level, PDF path |
+| **ServiceRequests** | Linked to contracts; costs, currency, status |
 
-**Contracts Table**
-- Linked to Clients via foreign key
-- Tracks contract period, status, and service level
-- Stores path to signed agreement documents
-- One-to-many relationship with ServiceRequests
-
-**ServiceRequests Table**
-- Linked to Contracts via foreign key
-- Stores request description, cost in ZAR/USD
-- Tracks exchange rate at time of creation
-- Includes status and creation timestamp
-
-## Running the Application
-
-### Using Visual Studio
-1. Open `TechMovesLogistics.slnx` in Visual Studio 2025
-2. Set "TechMoves Logistics" project as the startup project
-3. Press `F5` or click **Debug > Start Debugging**
-4. The application opens in your default browser (typically `https://localhost:5001`)
-
-### Using .NET CLI
-```bash
-cd "TechMoves Logistics"
-dotnet run
-```
-
-The application will be available at:
-- **HTTPS**: `https://localhost:5001`
-- **HTTP**: `http://localhost:5000`
-
-## Project Architecture
-
-### Design Patterns Used
-
-**Repository Pattern**
-- Data access layer is abstracted through repository interfaces
-- Each entity (Client, Contract, ServiceRequest) has a dedicated repository
-- Enables easy testing and data access flexibility
-
-**Service Layer Pattern**
-- Business logic is separated from controllers
-- Services handle complex operations and validation
-- Dependency injection manages service lifecycle
-
-**Dependency Injection**
-- All dependencies are registered in `Program.cs`
-- Constructor injection throughout the application
-- Loose coupling between layers
-
-### Layered Architecture
-
-1. **Controller Layer** - Handles HTTP requests/responses
-2. **Service Layer** - Implements business logic and validation
-3. **Repository Layer** - Manages data access
-4. **Data Layer** - Entity Framework Core and database context
-5. **Model Layer** - Domain entities and enumerations
-
-## Key Features Explained
-
-### Client Management
-- Full CRUD operations for clients
-- Store comprehensive contact information
-- Regional classification for organizational purposes
-
-### Contract Lifecycle Management
-- **Draft**: Initial contract creation
-- **Active**: Ongoing service contract
-- **Completed**: Contract fulfilled
-- **Expired**: Contract term ended
-
-### Service Request Processing
-- Link service requests to specific contracts
-- Multi-currency support with automatic conversion tracking
-- Exchange rate history for audit purposes
-- Status tracking throughout request lifecycle:
-  - **Pending**: Awaiting processing
-  - **In Progress**: Currently being handled
-  - **Completed**: Service delivered
-  - **Cancelled**: Request cancelled
-
-### Currency Management
-- Real-time exchange rate fetching from ExchangeRate-API
-- Stores both ZAR and USD amounts
-- Records exchange rate at time of transaction
-- Fallback mechanism (18.50 ZAR per USD) if API unavailable
-
-### File Management
-- Secure file upload for signed agreements
-- Storage in dedicated `wwwroot/uploads` directory
-- Document association with contracts
+---
 
 ## Testing
 
-The project includes a comprehensive test suite in `TechMovesLogistics.Tests/`:
+### Run all tests
 
-### Test Classes
-- `ContractServiceTests.cs` - Tests for contract business logic
-- `CurrencyServiceTests.cs` - Tests for currency conversion functionality
-- `FileServiceTests.cs` - Tests for file upload/management
-- `ServiceRequestServiceTests.cs` - Tests for service request operations
-
-### Running Tests Locally
-```bash
-cd TechMovesLogistics.Tests
-dotnet test
+```powershell
+dotnet test TechMovesLogistics.Tests
 ```
 
-Or run tests through Visual Studio Test Explorer (Test > Test Explorer or Ctrl+E, Ctrl+T)
+### Unit tests only
 
-### Automated Testing in GitHub Actions
+```powershell
+dotnet test TechMovesLogistics.Tests --filter "FullyQualifiedName!~Integration"
+```
 
-Unit tests are automatically executed on every push and pull request through GitHub Actions. The workflow:
+### Integration tests only (18 tests)
 
-- **Trigger**: Runs on push to `main` and `develop` branches, and on all pull requests
-- **Environment**: Ubuntu latest with .NET 10 SDK
-- **Steps**:
-  1. Checks out the code
-  2. Sets up .NET 10 environment
-  3. Restores NuGet dependencies
-  4. Builds the project in Release configuration
-  5. Runs all unit tests with detailed logging
-  6. Publishes test results as artifacts for 30 days
+Requires LocalDB. Uses `WebApplicationFactory` to boot the API in-process.
 
-**Workflow File**: `.github/workflows/unit-tests.yml`
+```powershell
+dotnet test TechMovesLogistics.Tests --filter "FullyQualifiedName~Integration"
+```
 
-To view test results:
-1. Navigate to the **Actions** tab in the GitHub repository
-2. Select the workflow run you want to inspect
-3. Check the **Unit Tests** job for build logs and test output
-4. Download the **test-results** artifact to view detailed test reports locally
+Or use **Visual Studio Test Explorer** → filter by `Integration` → Run All.
+
+Integration tests cover:
+- Authenticated CRUD and filtering on contracts/clients
+- Business rules (e.g. service request on expired contract → 400)
+- Auth (login success, unauthorised → 401)
+- Currency endpoint
+
+---
+
+## CI/CD
+
+GitHub Actions workflows in `.github/workflows/`:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `unit-tests.yml` | Push / PR | Builds solution, runs unit tests |
+| `integration-tests.yml` | Push / PR | SQL Server 2022 service container, runs 18 integration tests |
+| `docker-build.yml` | Push / PR | Builds API and MVC Dockerfiles (no push to registry) |
+
+View results under the **Actions** tab on GitHub.
+
+---
 
 ## Configuration
 
-### Key Configuration Files
+### MVC — `TechMoves Logistics/appsettings.json`
 
-**appsettings.json**
-```json
-{
-  "Logging": { /* Logging configuration */ },
-  "ConnectionStrings": { /* Database connection */ },
-  "CurrencyApi": { /* Exchange rate API configuration */ },
-  "AllowedHosts": "*"
-}
-```
+| Key | Purpose |
+|-----|---------|
+| `ApiSettings:BaseUrl` | REST API base URL (local or Docker internal URL) |
 
-**appsettings.Development.json**
-- Development-specific settings override production settings
-- Override logging levels, connection strings, or API endpoints as needed
+### API — `TechMovesLogistics.Api/appsettings.json`
 
-## Common Tasks
+| Key | Purpose |
+|-----|---------|
+| `ConnectionStrings:DefaultConnection` | SQL Server connection |
+| `Jwt:Key`, `Jwt:Issuer`, `Jwt:Audience` | JWT signing and validation |
+| `Auth:Username`, `Auth:Password` | Login credentials |
+| `CurrencyApi:BaseUrl` | Exchange rate API endpoint |
 
-### Adding a New Entity
-1. Create model class in `Models/`
-2. Add DbSet to `ApplicationDbContext`
-3. Create repository interface in `Repositories/Interfaces/`
-4. Create repository implementation in `Repositories/`
-5. Create service interface in `Services/Interfaces/` (if needed)
-6. Create service implementation in `Services/`
-7. Create or update controller in `Controllers/`
-8. Create migration: `dotnet ef migrations add <Name>`
-9. Update database: `dotnet ef database update`
+### Docker — `.env` (from `.env.example`)
 
-### Changing Database
-1. Update connection string in `appsettings.json`
-2. Ensure SQL Server is accessible
-3. Run `dotnet ef database update`
+| Variable | Purpose |
+|----------|---------|
+| `MSSQL_SA_PASSWORD` | SQL Server SA password |
+| `DB_SERVER`, `DB_NAME` | Database host and name |
+| `JWT_KEY`, `JWT_ISSUER`, `JWT_AUDIENCE` | JWT configuration |
+| `AUTH_USERNAME`, `AUTH_PASSWORD` | API login |
+| `API_INTERNAL_URL` | MVC → API URL inside Docker network |
+| `CURRENCY_API_BASE_URL` | External currency API |
+
+---
 
 ## Troubleshooting
 
-### Database Connection Issues
-- Verify SQL Server/LocalDB is running
-- Check connection string in `appsettings.json`
-- Run `dotnet ef database update` to ensure schema is created
+### Swagger returns 401
+Log in via `POST /api/auth/login`, then use **Authorize** with the JWT token.
 
-### Port Already in Use
-- Change port in `Properties/launchSettings.json`
-- Or specify port via command line: `dotnet run --urls "https://localhost:5002"`
+### MVC cannot reach API locally
+- Confirm the API is running on `https://localhost:7216`
+- Check `ApiSettings:BaseUrl` in MVC `appsettings.json`
+- Trust the dev HTTPS certificate if needed: `dotnet dev-certs https --trust`
 
-### NuGet Package Errors
-```bash
-dotnet nuget locals all --clear
-dotnet restore
+### Docker containers fail to start
+```powershell
+docker compose down
+docker compose up --build
+docker compose logs glms-backend-api
+```
+Ensure port **8080**, **8081**, and **1433** are not in use.
+
+### Integration test database errors
+- Confirm SQL Server LocalDB is installed
+- Run integration tests sequentially (shared collection fixture handles DB reset)
+- Close other test runs that may lock `TechMovesLogisticsDB_Test`
+
+### Apply Swagger Authorize button fix
+If **Authorize** is missing, rebuild the API container:
+```powershell
+docker compose up --build glms-backend-api
 ```
 
-### Migration Issues
-```bash
-# Remove last migration if not yet applied to database
-dotnet ef migrations remove
+---
 
-# View migration history
-dotnet ef migrations list
-```
+## Documentation
 
-**Built with ❤️ using ASP.NET Core 10**
+- **Part 3 progress tracker:** `PART3-PROGRESS.md`
+- **Technical reflection:** `docs/Technical-Reflection-PROG7311-Part3.docx`
+
+---
+
+**Built with ASP.NET Core 10 — TechMoves Logistics (PROG7311 Part 3)**
