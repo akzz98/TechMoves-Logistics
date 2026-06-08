@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using TechMovesLogistics.Api.Controllers;
 using TechMoves_Logistics.Data;
 
 namespace TechMovesLogistics.Tests.Integration
 {
     // Boots the API in-process for integration tests (LocalDB: TechMovesLogisticsDB_Test).
-    public class ApiWebApplicationFactory : WebApplicationFactory<Program>
+    public class ApiWebApplicationFactory : WebApplicationFactory<ContractsController>
     {
         private bool _databaseInitialized;
 
@@ -15,29 +17,20 @@ namespace TechMovesLogistics.Tests.Integration
             builder.UseEnvironment("Testing");
         }
 
-        public override HttpClient CreateClient(WebApplicationFactoryClientOptions options)
+        protected override IHost CreateHost(IHostBuilder builder)
         {
-            EnsureDatabase();
-            return base.CreateClient(options);
-        }
+            var host = base.CreateHost(builder);
 
-        public override HttpClient CreateClient()
-        {
-            EnsureDatabase();
-            return base.CreateClient();
-        }
+            if (!_databaseInitialized)
+            {
+                using var scope = host.Services.CreateScope();
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                db.Database.EnsureDeleted();
+                db.Database.EnsureCreated();
+                _databaseInitialized = true;
+            }
 
-        // Creates a fresh LocalDB schema for each test run.
-        public void EnsureDatabase()
-        {
-            if (_databaseInitialized)
-                return;
-
-            using var scope = Services.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            db.Database.EnsureDeleted();
-            db.Database.EnsureCreated();
-            _databaseInitialized = true;
+            return host;
         }
     }
 }
