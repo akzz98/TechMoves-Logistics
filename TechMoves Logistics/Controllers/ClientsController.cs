@@ -1,29 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TechMoves_Logistics.Data;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using TechMoves_Logistics.Models;
-using TechMoves_Logistics.Repositories.Interfaces;
+using TechMoves_Logistics.Services;
 
 namespace TechMoves_Logistics.Controllers
 {
+    [Authorize]
     public class ClientsController : Controller
     {
-        private readonly IClientRepository _clientRepo;
+        private readonly IClientsApiClient _clientsApiClient;
 
-        public ClientsController(IClientRepository clientRepo)
+        public ClientsController(IClientsApiClient clientsApiClient)
         {
-            _clientRepo = clientRepo;
+            _clientsApiClient = clientsApiClient;
         }
 
         // GET: Clients
         public async Task<IActionResult> Index()
         {
-            return View(await _clientRepo.GetAllAsync());
+            return View(await _clientsApiClient.GetAllAsync());
         }
 
         // GET: Clients/Details/5
@@ -31,7 +26,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var client = await _clientRepo.GetByIdAsync(id.Value);
+            var client = await _clientsApiClient.GetByIdAsync(id.Value);
             if (client == null) return NotFound();
 
             return View(client);
@@ -49,7 +44,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (ModelState.IsValid)
             {
-                await _clientRepo.AddAsync(client);
+                await _clientsApiClient.CreateAsync(client);
                 return RedirectToAction(nameof(Index));
             }
             return View(client);
@@ -60,7 +55,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var client = await _clientRepo.GetByIdAsync(id.Value);
+            var client = await _clientsApiClient.GetByIdAsync(id.Value);
             if (client == null) return NotFound();
 
             return View(client);
@@ -77,7 +72,9 @@ namespace TechMoves_Logistics.Controllers
 
             if (ModelState.IsValid)
             {
-                await _clientRepo.UpdateAsync(client);
+                var updated = await _clientsApiClient.UpdateAsync(id, client);
+                if (updated == null) return NotFound();
+
                 return RedirectToAction(nameof(Index));
             }
             return View(client);
@@ -88,7 +85,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var client = await _clientRepo.GetByIdAsync(id.Value);
+            var client = await _clientsApiClient.GetByIdAsync(id.Value);
             if (client == null) return NotFound();
 
             return View(client);
@@ -99,7 +96,9 @@ namespace TechMoves_Logistics.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _clientRepo.DeleteAsync(id);
+            var deleted = await _clientsApiClient.DeleteAsync(id);
+            if (!deleted) return NotFound();
+
             return RedirectToAction(nameof(Index));
         }
     }

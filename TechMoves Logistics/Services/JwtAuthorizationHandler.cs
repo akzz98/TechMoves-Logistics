@@ -12,16 +12,21 @@ namespace TechMoves_Logistics.Services
             _httpContextAccessor = httpContextAccessor;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(
+        protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
             CancellationToken cancellationToken)
         {
-            var token = _httpContextAccessor.HttpContext?.Session.GetString(AuthSessionKeys.JwtToken);
+            var context = _httpContextAccessor.HttpContext;
+            if (context != null)
+            {
+                await context.Session.LoadAsync(cancellationToken);
+                var token = context.Session.GetString(AuthSessionKeys.JwtToken);
 
-            if (!string.IsNullOrEmpty(token))
-                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                if (!string.IsNullOrEmpty(token))
+                    request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
 
-            return base.SendAsync(request, cancellationToken);
+            return await base.SendAsync(request, cancellationToken);
         }
     }
 }
