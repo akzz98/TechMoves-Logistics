@@ -23,11 +23,21 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddHttpClient<IApiAuthService, ApiAuthService>((serviceProvider, client) =>
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<JwtAuthorizationHandler>();
+
+var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
+    ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured.");
+
+builder.Services.AddHttpClient("TechMovesApi", client =>
 {
-    var baseUrl = serviceProvider.GetRequiredService<IConfiguration>()["ApiSettings:BaseUrl"]
-        ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured.");
-    client.BaseAddress = new Uri(baseUrl);
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<JwtAuthorizationHandler>();
+
+builder.Services.AddHttpClient<IApiAuthService, ApiAuthService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
 });
 
 var app = builder.Build();
