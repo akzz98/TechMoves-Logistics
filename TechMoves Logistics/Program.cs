@@ -42,6 +42,7 @@ builder.Services.AddHttpClient<IApiAuthService, ApiAuthService>(client =>
 
 // API clients (HttpClient via TechMovesApi named client + JWT handler)
 builder.Services.AddScoped<IClientsApiClient, ClientsApiClient>();
+builder.Services.AddScoped<IContractsApiClient, ContractsApiClient>();
 
 var app = builder.Build();
 
