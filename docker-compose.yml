@@ -20,5 +20,30 @@ services:
       retries: 10
       start_period: 30s
 
+  glms-backend-api:
+    build:
+      context: .
+      dockerfile: TechMovesLogistics.Api/Dockerfile
+    container_name: glms-backend-api
+    depends_on:
+      sql-server-db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sql-server-db,1433;Database=TechMovesLogisticsDB;User Id=sa;Password=TechMoves@Docker123;TrustServerCertificate=True;MultipleActiveResultSets=true"
+
+  glms-frontend-web:
+    build:
+      context: .
+      dockerfile: TechMoves Logistics/Dockerfile
+    container_name: glms-frontend-web
+    depends_on:
+      - glms-backend-api
+    ports:
+      - "8081:8080"
+    environment:
+      ApiSettings__BaseUrl: "http://glms-backend-api:8080"
+
 volumes:
   sqlserver-data:
