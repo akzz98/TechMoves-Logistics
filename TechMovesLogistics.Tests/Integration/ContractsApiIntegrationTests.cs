@@ -113,6 +113,42 @@ namespace TechMovesLogistics.Tests.Integration
             Assert.Contains($"/api/contracts/{contract.Id}", response.Headers.Location.ToString());
         }
 
+        // POST then GET /api/contracts/{id} — data integrity
+        [Fact]
+        public async Task PostContract_ThenGetById_ReturnsPersistedData()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            var request = new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = new DateTime(2026, 8, 1),
+                EndDate = new DateTime(2027, 7, 31),
+                Status = ContractStatus.Active,
+                ServiceLevel = "Enterprise"
+            };
+
+            var createResponse = await client.PostAsJsonAsync("/api/contracts", request);
+            Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+            var created = await createResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(created);
+
+            var getResponse = await client.GetAsync($"/api/contracts/{created.Id}");
+
+            Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
+
+            var fetched = await getResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(fetched);
+            Assert.Equal(created.Id, fetched.Id);
+            Assert.Equal(clientId, fetched.ClientId);
+            Assert.Equal(request.StartDate, fetched.StartDate);
+            Assert.Equal(request.EndDate, fetched.EndDate);
+            Assert.Equal(ContractStatus.Active, fetched.Status);
+            Assert.Equal("Enterprise", fetched.ServiceLevel);
+        }
+
         private async Task<HttpClient> CreateAuthenticatedClientAsync()
         {
             var client = _factory.CreateClient();
