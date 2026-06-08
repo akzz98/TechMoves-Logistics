@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using TechMoves_Logistics.Services;
 
 namespace TechMoves_Logistics.Filters
@@ -24,7 +25,11 @@ namespace TechMoves_Logistics.Filters
                 return;
             }
 
-            context.HttpContext.TempData["ErrorMessage"] = apiException.Message;
+            var tempData = context.HttpContext.RequestServices
+                .GetRequiredService<ITempDataDictionaryFactory>()
+                .GetTempData(context.HttpContext);
+            tempData["ErrorMessage"] = apiException.Message;
+
             context.Result = new RedirectToActionResult("Index", "Home", null);
             context.ExceptionHandled = true;
         }
