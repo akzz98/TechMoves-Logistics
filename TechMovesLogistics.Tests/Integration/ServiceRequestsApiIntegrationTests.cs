@@ -49,6 +49,76 @@ namespace TechMovesLogistics.Tests.Integration
             Assert.Contains("Expired", message, StringComparison.OrdinalIgnoreCase);
         }
 
+        // POST /api/servicerequests — 201 for Active contract
+        [Fact]
+        public async Task PostServiceRequest_ForActiveContract_Returns201()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            var contractResponse = await client.PostAsJsonAsync("/api/contracts", new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = new DateTime(2026, 1, 1),
+                EndDate = new DateTime(2026, 12, 31),
+                Status = ContractStatus.Active,
+                ServiceLevel = "Standard"
+            });
+
+            contractResponse.EnsureSuccessStatusCode();
+            var contract = await contractResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(contract);
+
+            var response = await client.PostAsJsonAsync("/api/servicerequests", new CreateServiceRequestRequestDto
+            {
+                ContractId = contract.Id,
+                Description = "Scheduled delivery",
+                CostUSD = 250m
+            });
+
+            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+
+            var created = await response.Content.ReadFromJsonAsync<ServiceRequestResponseDto>();
+            Assert.NotNull(created);
+            Assert.True(created.Id > 0);
+            Assert.Equal(contract.Id, created.ContractId);
+            Assert.Equal("Scheduled delivery", created.Description);
+            Assert.True(created.CostZAR > 0);
+        }
+
+        // POST /api/servicerequests — 400 when contract is On Hold
+        [Fact]
+        public async Task PostServiceRequest_ForOnHoldContract_Returns400()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            var contractResponse = await client.PostAsJsonAsync("/api/contracts", new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = new DateTime(2026, 2, 1),
+                EndDate = new DateTime(2026, 11, 30),
+                Status = ContractStatus.OnHold,
+                ServiceLevel = "Standard"
+            });
+
+            contractResponse.EnsureSuccessStatusCode();
+            var contract = await contractResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(contract);
+
+            var response = await client.PostAsJsonAsync("/api/servicerequests", new CreateServiceRequestRequestDto
+            {
+                ContractId = contract.Id,
+                Description = "Blocked delivery attempt",
+                CostUSD = 50m
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+
+            var message = await response.Content.ReadAsStringAsync();
+            Assert.Contains("On Hold", message, StringComparison.OrdinalIgnoreCase);
+        }
+
         private async Task<HttpClient> CreateAuthenticatedClientAsync()
         {
             var client = _factory.CreateClient();

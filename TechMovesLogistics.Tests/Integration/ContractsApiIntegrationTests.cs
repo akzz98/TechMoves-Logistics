@@ -193,6 +193,57 @@ namespace TechMovesLogistics.Tests.Integration
             Assert.Equal(ContractStatus.OnHold, fetched.Status);
         }
 
+        // GET /api/contracts/{id} — 404 when not found
+        [Fact]
+        public async Task GetContractById_WhenNotFound_Returns404()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+
+            var response = await client.GetAsync("/api/contracts/99999");
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        // PATCH /api/contracts/{id}/status — 404 when not found
+        [Fact]
+        public async Task PatchContractStatus_WhenNotFound_Returns404()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+
+            var response = await client.PatchAsJsonAsync(
+                "/api/contracts/99999/status",
+                new UpdateContractStatusRequestDto { Status = ContractStatus.Active });
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        // DELETE /api/contracts/{id} — 204 and subsequent GET returns 404
+        [Fact]
+        public async Task DeleteContract_Returns204_AndRemovesContract()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            var createResponse = await client.PostAsJsonAsync("/api/contracts", new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = new DateTime(2026, 9, 1),
+                EndDate = new DateTime(2027, 8, 31),
+                Status = ContractStatus.Draft,
+                ServiceLevel = "Standard"
+            });
+
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(created);
+
+            var deleteResponse = await client.DeleteAsync($"/api/contracts/{created.Id}");
+            Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+            var getResponse = await client.GetAsync($"/api/contracts/{created.Id}");
+            Assert.Equal(HttpStatusCode.NotFound, getResponse.StatusCode);
+        }
+
         private async Task<HttpClient> CreateAuthenticatedClientAsync()
         {
             var client = _factory.CreateClient();
