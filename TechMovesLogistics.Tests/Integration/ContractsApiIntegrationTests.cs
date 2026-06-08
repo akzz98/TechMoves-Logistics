@@ -7,7 +7,8 @@ using TechMoves_Logistics.Models.Enums;
 
 namespace TechMovesLogistics.Tests.Integration
 {
-    public class ContractsApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
+    [Collection("Integration")]
+    public class ContractsApiIntegrationTests
     {
         private readonly ApiWebApplicationFactory _factory;
 
@@ -50,8 +51,9 @@ namespace TechMovesLogistics.Tests.Integration
 
             var contracts = await response.Content.ReadFromJsonAsync<List<ContractResponseDto>>();
             Assert.NotNull(contracts);
-            Assert.Single(contracts);
-            Assert.Equal(ContractStatus.OnHold, contracts[0].Status);
+            Assert.NotEmpty(contracts);
+            Assert.All(contracts, c => Assert.Equal(ContractStatus.OnHold, c.Status));
+            Assert.Contains(contracts, c => c.ClientId == clientId && c.EndDate == new DateTime(2026, 12, 31));
         }
 
         // GET /api/contracts?startDate=&endDate=
@@ -75,9 +77,13 @@ namespace TechMovesLogistics.Tests.Integration
 
             var contracts = await response.Content.ReadFromJsonAsync<List<ContractResponseDto>>();
             Assert.NotNull(contracts);
-            Assert.Single(contracts);
-            Assert.True(contracts[0].StartDate >= new DateTime(2026, 1, 1));
-            Assert.True(contracts[0].EndDate <= new DateTime(2026, 12, 31));
+            Assert.NotEmpty(contracts);
+            Assert.All(contracts, c =>
+            {
+                Assert.True(c.StartDate >= new DateTime(2026, 1, 1));
+                Assert.True(c.EndDate <= new DateTime(2026, 12, 31));
+            });
+            Assert.Contains(contracts, c => c.ClientId == clientId && c.StartDate == new DateTime(2026, 6, 15));
         }
 
         // POST /api/contracts

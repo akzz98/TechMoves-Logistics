@@ -6,7 +6,8 @@ using TechMoves_Logistics.Models.Enums;
 
 namespace TechMovesLogistics.Tests.Integration
 {
-    public class ServiceRequestsApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
+    [Collection("Integration")]
+    public class ServiceRequestsApiIntegrationTests
     {
         private readonly ApiWebApplicationFactory _factory;
 
