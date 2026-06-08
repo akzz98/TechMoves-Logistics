@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using TechMovesLogistics.Api.Dtos;
+using TechMoves_Logistics.Models.Enums;
 
 namespace TechMovesLogistics.Tests.Integration
 {
@@ -29,6 +30,56 @@ namespace TechMovesLogistics.Tests.Integration
             Assert.Equal(JsonValueKind.Array, json.ValueKind);
         }
 
+        // GET /api/contracts?status=
+        [Fact]
+        public async Task GetContracts_WithStatusFilter_ReturnsMatchingContracts()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            await CreateTestContractAsync(
+                client, clientId, ContractStatus.OnHold,
+                new DateTime(2026, 1, 1), new DateTime(2026, 12, 31));
+            await CreateTestContractAsync(
+                client, clientId, ContractStatus.Expired,
+                new DateTime(2025, 1, 1), new DateTime(2025, 12, 31));
+
+            var response = await client.GetAsync($"/api/contracts?status={ContractStatus.OnHold}");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            var contracts = await response.Content.ReadFromJsonAsync<List<ContractResponseDto>>();
+            Assert.NotNull(contracts);
+            Assert.Single(contracts);
+            Assert.Equal(ContractStatus.OnHold, contracts[0].Status);
+        }
+
+        // GET /api/contracts?startDate=&endDate=
+        [Fact]
+        public async Task GetContracts_WithDateRangeFilter_ReturnsMatchingContracts()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            await CreateTestContractAsync(
+                client, clientId, ContractStatus.Draft,
+                new DateTime(2026, 6, 15), new DateTime(2026, 12, 31));
+            await CreateTestContractAsync(
+                client, clientId, ContractStatus.Draft,
+                new DateTime(2024, 1, 1), new DateTime(2024, 12, 31));
+
+            var response = await client.GetAsync(
+                "/api/contracts?startDate=2026-06-01&endDate=2026-12-31");
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+            var contracts = await response.Content.ReadFromJsonAsync<List<ContractResponseDto>>();
+            Assert.NotNull(contracts);
+            Assert.Single(contracts);
+            Assert.True(contracts[0].StartDate >= new DateTime(2026, 1, 1));
+            Assert.True(contracts[0].EndDate <= new DateTime(2026, 12, 31));
+        }
+
         private async Task<HttpClient> CreateAuthenticatedClientAsync()
         {
             var client = _factory.CreateClient();
@@ -48,6 +99,39 @@ namespace TechMovesLogistics.Tests.Integration
                 new AuthenticationHeaderValue("Bearer", loginResult.Token);
 
             return client;
+        }
+
+        private static async Task<int> CreateTestClientAsync(HttpClient client)
+        {
+            var response = await client.PostAsJsonAsync("/api/clients", new CreateClientRequestDto
+            {
+                Name = "Filter Test Client",
+                ContactDetails = "filter@test.com",
+                Region = "Gauteng"
+            });
+
+            response.EnsureSuccessStatusCode();
+            var created = await response.Content.ReadFromJsonAsync<ClientResponseDto>();
+            return created!.Id;
+        }
+
+        private static async Task CreateTestContractAsync(
+            HttpClient client,
+            int clientId,
+            ContractStatus status,
+            DateTime startDate,
+            DateTime endDate)
+        {
+            var response = await client.PostAsJsonAsync("/api/contracts", new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = startDate,
+                EndDate = endDate,
+                Status = status,
+                ServiceLevel = "Standard"
+            });
+
+            response.EnsureSuccessStatusCode();
         }
     }
 }
