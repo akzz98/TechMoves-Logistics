@@ -29,7 +29,7 @@ builder.Services.AddTransient<JwtAuthorizationHandler>();
 var apiBaseUrl = builder.Configuration["ApiSettings:BaseUrl"]
     ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured.");
 
-builder.Services.AddHttpClient("TechMovesApi", client =>
+builder.Services.AddHttpClient(ApiHttpClientNames.TechMovesApi, client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 })
