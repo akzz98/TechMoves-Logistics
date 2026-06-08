@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TechMovesLogistics.Api.Dtos;
 using TechMoves_Logistics.Services.Interfaces;
 
 namespace TechMovesLogistics.Api.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/servicerequests")]
     public class ServiceRequestsController : ControllerBase
