@@ -149,6 +149,44 @@ namespace TechMovesLogistics.Tests.Integration
             Assert.Equal("Enterprise", fetched.ServiceLevel);
         }
 
+        // PATCH /api/contracts/{id}/status
+        [Fact]
+        public async Task PatchContractStatus_Returns200_WithUpdatedStatus()
+        {
+            var client = await CreateAuthenticatedClientAsync();
+            var clientId = await CreateTestClientAsync(client);
+
+            var createResponse = await client.PostAsJsonAsync("/api/contracts", new CreateContractRequestDto
+            {
+                ClientId = clientId,
+                StartDate = new DateTime(2026, 3, 1),
+                EndDate = new DateTime(2026, 12, 31),
+                Status = ContractStatus.Draft,
+                ServiceLevel = "Standard"
+            });
+
+            createResponse.EnsureSuccessStatusCode();
+            var created = await createResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(created);
+            Assert.Equal(ContractStatus.Draft, created.Status);
+
+            var patchResponse = await client.PatchAsJsonAsync(
+                $"/api/contracts/{created.Id}/status",
+                new UpdateContractStatusRequestDto { Status = ContractStatus.OnHold });
+
+            Assert.Equal(HttpStatusCode.OK, patchResponse.StatusCode);
+
+            var updated = await patchResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(updated);
+            Assert.Equal(created.Id, updated.Id);
+            Assert.Equal(ContractStatus.OnHold, updated.Status);
+
+            var getResponse = await client.GetAsync($"/api/contracts/{created.Id}");
+            var fetched = await getResponse.Content.ReadFromJsonAsync<ContractResponseDto>();
+            Assert.NotNull(fetched);
+            Assert.Equal(ContractStatus.OnHold, fetched.Status);
+        }
+
         private async Task<HttpClient> CreateAuthenticatedClientAsync()
         {
             var client = _factory.CreateClient();
