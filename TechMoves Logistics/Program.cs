@@ -40,6 +40,9 @@ builder.Services.AddHttpClient<IApiAuthService, ApiAuthService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
+// API clients (HttpClient via TechMovesApi named client + JWT handler)
+builder.Services.AddScoped<IClientsApiClient, ClientsApiClient>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
