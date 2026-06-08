@@ -1,35 +1,28 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using TechMoves_Logistics.Data;
 using TechMoves_Logistics.Models;
 using TechMoves_Logistics.Models.Enums;
-using TechMoves_Logistics.Repositories.Interfaces;
-using TechMoves_Logistics.Services.Interfaces;
+using TechMoves_Logistics.Services;
 
 namespace TechMoves_Logistics.Controllers
 {
+    [Authorize]
     public class ContractsController : Controller
     {
-        private readonly IContractService _contractService;
-        private readonly IClientRepository _clientRepo;
-        private readonly IFileService _fileService;
+        private readonly IContractsApiClient _contractsApiClient;
+        private readonly IClientsApiClient _clientsApiClient;
 
-        public ContractsController(IContractService contractService, IClientRepository clientRepo, IFileService fileService)
+        public ContractsController(IContractsApiClient contractsApiClient, IClientsApiClient clientsApiClient)
         {
-            _contractService = contractService;
-            _clientRepo = clientRepo;
-            _fileService = fileService;
+            _contractsApiClient = contractsApiClient;
+            _clientsApiClient = clientsApiClient;
         }
 
         // GET: Contracts with search filter
         public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, ContractStatus? status)
         {
-            var contracts = await _contractService.SearchContractsAsync(startDate, endDate, status);
+            var contracts = await _contractsApiClient.SearchAsync(startDate, endDate, status);
             return View(contracts);
         }
 
@@ -38,7 +31,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var contract = await _contractService.GetContractByIdAsync(id.Value);
+            var contract = await _contractsApiClient.GetByIdAsync(id.Value);
             if (contract == null) return NotFound();
 
             return View(contract);
@@ -47,7 +40,7 @@ namespace TechMoves_Logistics.Controllers
         // GET: Contracts/Create
         public async Task<IActionResult> Create()
         {
-            ViewData["ClientId"] = new SelectList(await _clientRepo.GetAllAsync(), "Id", "Name");
+            ViewData["ClientId"] = new SelectList(await _clientsApiClient.GetAllAsync(), "Id", "Name");
             return View();
         }
 
@@ -60,25 +53,22 @@ namespace TechMoves_Logistics.Controllers
         {
             if (ModelState.IsValid)
             {
-                // Handle PDF upload via FileService
+                var created = await _contractsApiClient.CreateAsync(contract);
+
                 if (signedAgreement != null)
                 {
-                    try
+                    var uploaded = await _contractsApiClient.UploadAgreementAsync(created.Id, signedAgreement);
+                    if (uploaded == null)
                     {
-                        contract.SignedAgreementPath = await _fileService.SavePdfAsync(signedAgreement);
-                    }
-                    catch (Exception ex)
-                    {
-                        ModelState.AddModelError("", ex.Message);
-                        ViewData["ClientId"] = new SelectList(await _clientRepo.GetAllAsync(), "Id", "Name");
+                        ModelState.AddModelError("", "Invalid PDF file. Only PDF files are allowed.");
+                        ViewData["ClientId"] = new SelectList(await _clientsApiClient.GetAllAsync(), "Id", "Name");
                         return View(contract);
                     }
                 }
 
-                await _contractService.CreateContractAsync(contract);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ClientId"] = new SelectList(await _clientRepo.GetAllAsync(), "Id", "Name");
+            ViewData["ClientId"] = new SelectList(await _clientsApiClient.GetAllAsync(), "Id", "Name");
             return View(contract);
         }
 
@@ -87,10 +77,10 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var contract = await _contractService.GetContractByIdAsync(id.Value);
+            var contract = await _contractsApiClient.GetByIdAsync(id.Value);
             if (contract == null) return NotFound();
 
-            ViewData["ClientId"] = new SelectList(await _clientRepo.GetAllAsync(), "Id", "Name", contract.ClientId);
+            ViewData["ClientId"] = new SelectList(await _clientsApiClient.GetAllAsync(), "Id", "Name", contract.ClientId);
             return View(contract);
         }
 
@@ -105,29 +95,23 @@ namespace TechMoves_Logistics.Controllers
 
             if (ModelState.IsValid)
             {
-                // Allow replacing the PDF on edit
+                var updated = await _contractsApiClient.UpdateAsync(id, contract);
+                if (updated == null) return NotFound();
+
                 if (signedAgreement != null)
                 {
-                    try
+                    var uploaded = await _contractsApiClient.UploadAgreementAsync(id, signedAgreement);
+                    if (uploaded == null)
                     {
-                        // Delete old file if it exists
-                        if (!string.IsNullOrEmpty(contract.SignedAgreementPath))
-                            _fileService.DeleteFile(contract.SignedAgreementPath);
-
-                        contract.SignedAgreementPath = await _fileService.SavePdfAsync(signedAgreement);
-                    }
-                    catch (Exception ex)
-                    {
-                        ModelState.AddModelError("", ex.Message);
-                        ViewData["ClientId"] = new SelectList(await _clientRepo.GetAllAsync(), "Id", "Name", contract.ClientId);
+                        ModelState.AddModelError("", "Invalid PDF file. Only PDF files are allowed.");
+                        ViewData["ClientId"] = new SelectList(await _clientsApiClient.GetAllAsync(), "Id", "Name", contract.ClientId);
                         return View(contract);
                     }
                 }
 
-                await _contractService.UpdateContractAsync(contract);
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["ClientId"] = new SelectList(await _clientRepo.GetAllAsync(), "Id", "Name", contract.ClientId);
+            ViewData["ClientId"] = new SelectList(await _clientsApiClient.GetAllAsync(), "Id", "Name", contract.ClientId);
             return View(contract);
         }
 
@@ -136,7 +120,7 @@ namespace TechMoves_Logistics.Controllers
         {
             if (id == null) return NotFound();
 
-            var contract = await _contractService.GetContractByIdAsync(id.Value);
+            var contract = await _contractsApiClient.GetByIdAsync(id.Value);
             if (contract == null) return NotFound();
 
             return View(contract);
@@ -147,26 +131,18 @@ namespace TechMoves_Logistics.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            // Also delete the PDF file from server when contract is deleted
-            var contract = await _contractService.GetContractByIdAsync(id);
-            if (contract != null && !string.IsNullOrEmpty(contract.SignedAgreementPath))
-                _fileService.DeleteFile(contract.SignedAgreementPath);
+            var deleted = await _contractsApiClient.DeleteAsync(id);
+            if (!deleted) return NotFound();
 
-            await _contractService.DeleteContractAsync(id);
             return RedirectToAction(nameof(Index));
         }
 
         // GET: Download PDF Agreement
         public async Task<IActionResult> DownloadAgreement(int id)
         {
-            var contract = await _contractService.GetContractByIdAsync(id);
-            if (contract == null || string.IsNullOrEmpty(contract.SignedAgreementPath))
-                return NotFound();
+            var fileBytes = await _contractsApiClient.DownloadAgreementAsync(id);
+            if (fileBytes == null) return NotFound();
 
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", contract.SignedAgreementPath.TrimStart('/'));
-            if (!System.IO.File.Exists(filePath)) return NotFound();
-
-            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
             return File(fileBytes, "application/pdf", $"Contract_Agreement_{id}.pdf");
         }
     }
