@@ -16,7 +16,9 @@ namespace TechMoves_Logistics.Services
         // GET /api/servicerequests
         public async Task<IReadOnlyList<ServiceRequest>> GetAllAsync()
         {
-            var responses = await _httpClient.GetFromJsonAsync<List<ServiceRequestApiResponse>>("/api/servicerequests");
+            var response = await _httpClient.GetAsync("/api/servicerequests");
+            await response.EnsureApiSuccessAsync();
+            var responses = await response.Content.ReadFromJsonAsync<List<ServiceRequestApiResponse>>();
             return responses?.Select(r => r.ToModel()).ToList() ?? [];
         }
 
@@ -27,7 +29,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             var apiResponse = await response.Content.ReadFromJsonAsync<ServiceRequestApiResponse>();
             return apiResponse?.ToModel();
         }
@@ -51,7 +53,7 @@ namespace TechMoves_Logistics.Services
                     : message.Trim('"'));
             }
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             var created = await response.Content.ReadFromJsonAsync<ServiceRequestApiResponse>();
             return created!.ToModel();
         }
@@ -72,7 +74,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             var updated = await response.Content.ReadFromJsonAsync<ServiceRequestApiResponse>();
             return updated?.ToModel();
         }
@@ -85,7 +87,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return false;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return true;
         }
 

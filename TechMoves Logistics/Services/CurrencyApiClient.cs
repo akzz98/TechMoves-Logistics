@@ -14,8 +14,13 @@ namespace TechMoves_Logistics.Services
         // GET /api/currency/usd-zar
         public async Task<decimal> GetUsdToZarRateAsync()
         {
-            var response = await _httpClient.GetFromJsonAsync<CurrencyRateApiResponse>("/api/currency/usd-zar");
-            return response?.Rate ?? throw new InvalidOperationException("Unable to retrieve USD/ZAR exchange rate.");
+            var response = await _httpClient.GetAsync("/api/currency/usd-zar");
+            await response.EnsureApiSuccessAsync();
+            var rateResponse = await response.Content.ReadFromJsonAsync<CurrencyRateApiResponse>();
+            return rateResponse?.Rate
+                ?? throw new ApiClientException(
+                    System.Net.HttpStatusCode.InternalServerError,
+                    "Unable to retrieve USD/ZAR exchange rate.");
         }
 
         public decimal ConvertUsdToZar(decimal usdAmount, decimal rate)

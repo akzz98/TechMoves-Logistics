@@ -35,7 +35,9 @@ namespace TechMoves_Logistics.Services
                 ? $"/api/contracts?{string.Join("&", queryParts)}"
                 : "/api/contracts";
 
-            var contracts = await _httpClient.GetFromJsonAsync<List<Contract>>(url);
+            var response = await _httpClient.GetAsync(url);
+            await response.EnsureApiSuccessAsync();
+            var contracts = await response.Content.ReadFromJsonAsync<List<Contract>>();
             return contracts ?? [];
         }
 
@@ -46,7 +48,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadFromJsonAsync<Contract>();
         }
 
@@ -62,7 +64,7 @@ namespace TechMoves_Logistics.Services
                 contract.ServiceLevel
             });
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return (await response.Content.ReadFromJsonAsync<Contract>())!;
         }
 
@@ -81,7 +83,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadFromJsonAsync<Contract>();
         }
 
@@ -97,7 +99,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadFromJsonAsync<Contract>();
         }
 
@@ -109,7 +111,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return false;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return true;
         }
 
@@ -131,7 +133,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadFromJsonAsync<Contract>();
         }
 
@@ -143,7 +145,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadAsByteArrayAsync();
         }
     }

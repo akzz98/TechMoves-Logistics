@@ -15,7 +15,9 @@ namespace TechMoves_Logistics.Services
         // GET /api/clients
         public async Task<IReadOnlyList<Client>> GetAllAsync()
         {
-            var clients = await _httpClient.GetFromJsonAsync<List<Client>>("/api/clients");
+            var response = await _httpClient.GetAsync("/api/clients");
+            await response.EnsureApiSuccessAsync();
+            var clients = await response.Content.ReadFromJsonAsync<List<Client>>();
             return clients ?? [];
         }
 
@@ -26,7 +28,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadFromJsonAsync<Client>();
         }
 
@@ -40,7 +42,7 @@ namespace TechMoves_Logistics.Services
                 client.Region
             });
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return (await response.Content.ReadFromJsonAsync<Client>())!;
         }
 
@@ -57,7 +59,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return null;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return await response.Content.ReadFromJsonAsync<Client>();
         }
 
@@ -69,7 +71,7 @@ namespace TechMoves_Logistics.Services
             if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 return false;
 
-            response.EnsureSuccessStatusCode();
+            await response.EnsureApiSuccessAsync();
             return true;
         }
     }
