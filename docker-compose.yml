@@ -40,6 +40,8 @@ services:
       Auth__Username: ${AUTH_USERNAME}
       Auth__Password: ${AUTH_PASSWORD}
       CurrencyApi__BaseUrl: ${CURRENCY_API_BASE_URL}
+    volumes:
+      - api-uploads:/app/wwwroot/uploads
     networks:
       - glms-network
 
@@ -64,3 +66,4 @@ networks:
 
 volumes:
   sqlserver-data:
+  api-uploads:

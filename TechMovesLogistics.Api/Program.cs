@@ -42,7 +42,9 @@ builder.Services.AddAuthorization();
 
 // EF Core + SQL Server (API owns database access)
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sql => sql.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)));
 
 // Repositories
 builder.Services.AddScoped<IClientRepository, ClientRepository>();
@@ -57,6 +59,14 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddHttpClient<ICurrencyService, CurrencyService>();
 
 var app = builder.Build();
+
+// Apply pending EF Core migrations on startup (skipped in Testing for integration tests)
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    db.Database.Migrate();
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
